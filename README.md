@@ -3,6 +3,7 @@
 A replacement home screen for a Frameo-based digital photo frame (built and tested on a Pastigio "Frame 156",
 Rockchip RK3326, Android 8.1): a photo and video slideshow with a family calendar, clock, and weather, set up from
 a phone or computer on the home network. It works fully offline once set up, and needs no account or cloud service.
+This app has been mostly vibe-coded so use at your own discretion. 
 
 ## What it does
 
@@ -13,7 +14,7 @@ a phone or computer on the home network. It works fully offline once set up, and
 - **Layouts**: presets (Hybrid, Pictures, Calendar) or your own, edited on the frame or from a phone.
 - **Settings** from any browser on the home network, behind a PIN; backups and restore; warnings when something
   needs attention; dark mode; sleep schedules and brightness.
-- **Uploads** from a phone's browser or an iPhone Shortcut (`docs/ios-shortcut.md`).
+- **Uploads** from a phone's browser or an iPhone Shortcut (`docs/ios-shortcut.md`), I don't own an android 🤷‍♂️.
 
 ## How it is built
 
