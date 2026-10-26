@@ -1,0 +1,29 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/app/build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+
+# Outputs
+*.apk
+*.aab
+
+# Device artifacts pulled during testing
+/shots/
+
+# Never commit secrets or real calendar data
+*.jks
+*.keystore
+secrets*.json
+*.ics
+!tests/calendar/fixtures/*.ics
+
+# Generated test videos (scripts/test-media/make-videos.ps1)
+/test-video/
+
+# User-provided sample media (personal; never commit)
+/Samples/

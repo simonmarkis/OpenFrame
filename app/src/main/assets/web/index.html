@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenFrame</title>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="slideshow.css">
+  <link rel="stylesheet" href="clock.css">
+  <link rel="stylesheet" href="calendar-day.css">
+  <link rel="stylesheet" href="calendar-full.css">
+  <link rel="stylesheet" href="warnings.css">
+  <link rel="stylesheet" href="photo-menu.css">
+  <link rel="stylesheet" href="caption.css">
+  <link rel="stylesheet" href="layout-editor.css">
+  <link rel="stylesheet" href="dark.css">
+  <script>try {
+      const r = document.documentElement;
+      r.dataset.theme = localStorage.getItem('of-theme') || 'dark';
+      r.dataset.panelTheme = localStorage.getItem('of-panel-theme') || r.dataset.theme;
+    } catch (e) { document.documentElement.dataset.panelTheme = document.documentElement.dataset.theme || ''; }
+    if (navigator.userAgent.includes('OpenFrameShell')) document.documentElement.classList.add('frame');</script>
+</head>
+<body>
+  <div id="page"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

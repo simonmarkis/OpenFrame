@@ -1,0 +1,244 @@
+/* Photo actions under the quick menu, position and comment editors, Undo bar (SPEC §15, Phase 9). */
+
+.qm-stack { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: calc(100vw - 32px); }
+
+.pm-card { align-items: stretch; gap: 12px; padding: 14px; }
+/* Video on screen (SPEC §6): Play/Pause, Sound, main volume. */
+.pm-video { display: flex; align-items: center; gap: 10px; }
+.pm-vbtn {
+  display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 18px; border: 0; border-radius: 28px;
+  background: #f1f3f4; color: #202124; font: bold 18px sans-serif; white-space: nowrap;
+}
+.pm-vbtn svg { width: 30px; height: 30px; fill: #1a73e8; }
+.pm-vbtn.on { background: #1a73e8; color: #fff; }
+.pm-vbtn.on svg { fill: #fff; }
+.pm-vbtn:active { filter: brightness(0.94); }
+.pm-volume { flex: 1; min-width: 120px; height: 40px; accent-color: #1a73e8; }
+.pm-videobox { display: flex; flex-direction: column; gap: 6px; }
+.pm-seek { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
+.pm-time { min-width: 3.2em; color: #5f6368; font: bold 16px sans-serif; text-align: center; font-variant-numeric: tabular-nums; }
+.pm-seekbar { flex: 1; height: 44px; accent-color: #d93025; }
+.pm-fit { display: flex; align-items: center; gap: 14px; padding: 0 4px; }
+.pm-fit-label { color: #5f6368; font: bold 18px sans-serif; white-space: nowrap; }
+.pm-seg { display: flex; flex: 1; padding: 4px; border-radius: 26px; background: #f1f3f4; }
+.pm-seg button {
+  flex: 1;
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 23px;
+  background: transparent;
+  color: #3c4043;
+  font: bold 18px sans-serif;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.pm-seg button.on { background: #1a73e8; color: #fff; }
+.pm-items { display: flex; gap: 10px; }
+.pm-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 118px;
+  padding: 14px 6px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font: bold 17px sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.pm-item:active { background: #e2e5e7; }
+.pm-item svg { width: 38px; height: 38px; fill: #1a73e8; }
+.pm-item.danger svg { fill: #d93025; }
+.pm-item span { white-space: nowrap; }
+.pm-comment {
+  max-width: 520px;
+  padding: 0 6px;
+  color: #3c4043;
+  font: italic 17px/1.35 sans-serif;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Position editor: the photo in its own box, dragged and pinched by touch; the rest of the screen dimmed.
+   The photo is drawn whole (contain) and scaled and moved by a transform, like the slideshow's zoom. */
+.pe-veil { position: fixed; inset: 0; z-index: 45; background: rgba(0, 0, 0, 0.7); }
+.pe-box { position: absolute; overflow: hidden; background: #000; touch-action: none; user-select: none; }
+.pe-img, .pe-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.pe-img { object-fit: contain; transform-origin: 0 0; }
+.pe-bg { object-fit: cover; }
+.pe-hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 40px);
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font: 19px/1.35 sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+.pe-bar {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(560px, calc(100% - 32px));
+  padding: 12px 12px 10px;
+  border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.pe-actions { display: flex; justify-content: center; gap: 10px; }
+.pe-zoom-row { display: flex; align-items: flex-start; gap: 12px; }
+.pe-btn.pe-step { flex: none; width: 52px; padding: 0; font-size: 28px; }
+.pe-zoom-track { flex: 1; min-width: 0; padding: 0 6px; }
+.pe-zoom { display: block; width: 100%; height: 34px; margin: 0; accent-color: #1a73e8; }
+.pe-zoom-marks { position: relative; height: 22px; color: #5f6368; font: 15px sans-serif; }
+.pe-zoom-marks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.pe-zoom-marks span:first-child { transform: none; }
+.pe-zoom-marks span:last-child { transform: translateX(-100%); }
+.pe-btn {
+  height: 52px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 26px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font: bold 19px sans-serif;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.pe-btn:active { background: #e2e5e7; }
+.pe-btn.primary { background: #1a73e8; color: #fff; }
+.pe-btn.danger { background: transparent; color: #d93025; }
+.pe-btn:disabled { opacity: 0.6; }
+
+/* Comment editor: near the top, clear of the on-screen keyboard. */
+.ce-veil { position: fixed; inset: 0; z-index: 45; display: flex; justify-content: center; align-items: flex-start; padding-top: 5vh; background: rgba(0, 0, 0, 0.55); }
+.ce-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  padding: 20px 22px 16px;
+  border-radius: 22px;
+  background: #fff;
+  color: #3c4043;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.ce-head { display: flex; align-items: baseline; justify-content: space-between; }
+.ce-head b { font: bold 24px sans-serif; color: #202124; }
+.ce-count { color: #5f6368; font: 16px sans-serif; }
+.ce-text {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #dadce0;
+  border-radius: 14px;
+  color: #202124;
+  font: 22px/1.35 sans-serif;
+  resize: none;
+}
+.ce-text:focus { outline: none; border-color: #1a73e8; }
+.ce-note { color: #5f6368; font: 16px/1.35 sans-serif; }
+.ce-error { color: #d93025; font: 17px/1.35 sans-serif; }
+.ce-bar { display: flex; gap: 10px; align-items: center; }
+.ce-spacer { flex: 1; }
+/* Location editor (SPEC §8): one line, and the place's size. */
+.ce-line { box-sizing: border-box; height: 56px; }
+.ce-sizes { flex: none; }
+.ce-sizes button { padding: 0 10px; font-size: 17px; }
+.ce-where { display: flex; flex-direction: column; gap: 10px; }
+.ce-where[hidden] { display: none; }
+.ce-inline { display: flex; gap: 10px; align-items: center; }
+.ce-inline .ce-line { flex: 1; }
+/* Quick-select buttons (private places, address results, where-it-was-taken tabs). */
+.ce-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ce-chips:not(.pm-seg) button {
+  min-height: 44px;
+  padding: 6px 16px;
+  border: 2px solid #dadce0;
+  border-radius: 22px;
+  background: transparent;
+  color: inherit;
+  font: bold 17px sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.ce-chips:not(.pm-seg) button.on { border-color: #1a73e8; background: #1a73e8; color: #fff; }
+.ce-chips.pm-seg { flex-wrap: nowrap; }
+.ce-chips.ce-list { flex-direction: column; }
+.ce-chips.ce-list button { text-align: left; border-radius: 14px; font-weight: normal; }
+.ce-results { max-height: 30vh; overflow-y: auto; }
+/* Location editor with the map (SPEC §8). */
+.ce-card.ce-wide { width: 860px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.ce-map { height: 320px; max-height: 40vh; border-radius: 14px; overflow: hidden; background: #e8eaed; }
+.ce-map .ce-note { padding: 16px; }
+.ce-card.ce-wide .pm-seg button { padding: 0 8px; font-size: 17px; }
+
+/* Undo bubble after Hide / Delete (10 s; × closes it early). */
+.ub {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  z-index: 46;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 20px;
+  border-radius: 18px;
+  background: rgba(32, 33, 36, 0.92);
+  color: #fff;
+  font: 19px sans-serif;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.ub-undo {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: #8ab4f8;
+  font: bold 19px sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.ub-undo:active { background: rgba(255, 255, 255, 0.12); }
+.ub-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: #3c4043;
+  -webkit-tap-highlight-color: transparent;
+}
+.ub-close svg { display: block; width: 100%; height: 100%; fill: #fff; }
+.ub-close:active { background: #5f6368; }
+
+/* Narrow screens (phones looking at the frame): the cards wrap instead of running off the edge. */
+@media (max-width: 700px) {
+  .qm-stack { width: calc(100vw - 24px); }
+  .qm-card { width: 100%; }
+  .qm-item { flex: 1; width: auto; }
+  .pm-fit { flex-wrap: wrap; gap: 8px; }
+  .pm-seg button { height: 42px; padding: 0 8px; font-size: 16px; }
+  .pm-items { flex-wrap: wrap; }
+  .pm-item { flex-direction: row; justify-content: center; width: calc(50% - 5px); padding: 10px 8px; font-size: 16px; }
+  .pm-item svg { width: 28px; height: 28px; }
+  .pm-comment { max-width: none; }
+}

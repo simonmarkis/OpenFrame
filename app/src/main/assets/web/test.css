@@ -1,0 +1,62 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: #eee;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+.test {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px;
+}
+
+/* Portrait: stack everything. */
+@media (orientation: portrait) {
+  .test { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+}
+
+.clock {
+  text-align: center;
+  align-self: center;
+}
+#time { font-size: 72px; font-variant-numeric: tabular-nums; }
+#date { font-size: 22px; opacity: 0.8; }
+
+.fade {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 180px;
+}
+.fade .slide { position: absolute; inset: 0; }
+.fade .a { background: linear-gradient(135deg, #1e88e5, #43a047); }
+.fade .b { background: linear-gradient(135deg, #e53935, #fdd835); animation: xfade 4s ease-in-out infinite alternate; }
+.fade span {
+  position: absolute; right: 10px; bottom: 8px;
+  font-size: 13px; text-shadow: 0 1px 3px #000;
+}
+@keyframes xfade { from { opacity: 0; } to { opacity: 1; } }
+
+.info {
+  grid-column: 1 / -1;
+  overflow: auto;
+  font-size: 15px;
+}
+.info h1 { font-size: 20px; margin: 0 0 8px; }
+.info h2 { font-size: 16px; margin: 16px 0 6px; }
+
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+dt { opacity: 0.6; }
+dd { margin: 0; word-break: break-all; }
+
+ul { list-style: none; padding: 0; margin: 0; columns: 2; }
+li.ok::before { content: "✔ "; color: #66bb6a; }
+li.fail::before { content: "✘ "; color: #ef5350; }

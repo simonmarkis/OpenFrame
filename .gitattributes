@@ -1,0 +1,9 @@
+* text=auto
+gradlew text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.jar binary
+*.png binary
+# Vendored third-party files stay byte-identical to upstream (hashes in docs/THIRD_PARTY.md)
+app/src/main/assets/web/lib/ical.js -text
+app/src/main/assets/web/lib/ical.js.LICENSE.txt -text

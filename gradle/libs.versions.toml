@@ -1,0 +1,14 @@
+[versions]
+agp = "9.4.1"
+nanohttpd = "2.3.1"
+junit = "4.13.2"
+orgjson = "20240303"
+
+[libraries]
+nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
+junit = { module = "junit:junit", version.ref = "junit" }
+# Real org.json for JVM unit tests (android.jar only has stubs).
+orgjson = { module = "org.json:json", version.ref = "orgjson" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

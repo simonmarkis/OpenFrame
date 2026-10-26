@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenFrame settings</title>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="clock.css">
+  <link rel="stylesheet" href="caption.css">
+  <link rel="stylesheet" href="photo-menu.css">
+<link rel="stylesheet" href="settings.css">
+  <link rel="stylesheet" href="dark.css">
+  <script>try {
+      const r = document.documentElement;
+      r.dataset.theme = localStorage.getItem('of-theme') || 'dark';
+      r.dataset.panelTheme = localStorage.getItem('of-panel-theme') || r.dataset.theme;
+    } catch (e) { /* no storage */ }</script>
+</head>
+<body>
+  <header class="st-bar">
+    <button class="st-back" type="button" aria-label="Back"></button>
+    <h1 class="st-title">Settings</h1>
+    <span class="st-saved" aria-live="polite"></span>
+  </header>
+  <div class="st-main">
+    <nav class="st-nav" aria-label="Settings sections"></nav>
+    <main class="st-pane"></main>
+  </div>
+  <script type="module" src="settings.js"></script>
+</body>
+</html>

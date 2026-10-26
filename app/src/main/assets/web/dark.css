@@ -1,0 +1,157 @@
+/* Dark mode (SPEC §9, Phase 11c), modeled on Google Calendar's dark theme. Applies when <html> has
+   data-theme="dark" (lib/theme-core.js decides when). Variables where components have them; plain
+   overrides for the rest. Photos, the clock overlay, and the caption are unchanged. */
+
+html[data-theme="dark"] {
+  --st-bg: #202124;
+  --st-nav-bg: #2d2e31;
+  --st-text: #e8eaed;
+  --st-muted: #9aa0a6;
+  --st-line: #3c4043;
+  --st-accent: #8ab4f8;
+  --st-accent-bg: rgba(138, 180, 248, 0.16);
+  --st-press: #35363a;
+  --st-danger: #f28b82;
+  --st-danger-bg: rgba(242, 139, 130, 0.16);
+  --st-ok: #81c995;
+  --st-toggle-off: #5f6368;
+  --st-backdrop: rgba(0, 0, 0, 0.6);
+  --st-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+  --wn-card: #2d2e31;
+  --wn-text: #e8eaed;
+  --wn-muted: #9aa0a6;
+  --wn-line: #3c4043;
+  --wn-accent: #8ab4f8;
+  --wn-warn-ink: #fdd663;
+  color-scheme: dark;
+}
+
+/* ---- Quick menu, notices, photo actions, editors (frame page) ---- */
+html[data-theme="dark"] .qm-card,
+html[data-theme="dark"] .rm-card { background: #2d2e31; color: #e8eaed; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.7); }
+html[data-theme="dark"] .rm-when { color: #8ab4f8; }
+html[data-theme="dark"] .rm-time { color: #bdc1c6; }
+html[data-theme="dark"] .rm-dismiss { background: #8ab4f8; color: #202124; }
+html[data-theme="dark"] .notice-box,
+html[data-theme="dark"] .pe-bar,
+html[data-theme="dark"] .ce-card { background: #2d2e31; color: #e8eaed; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6); }
+html[data-theme="dark"] .notice-box b,
+html[data-theme="dark"] .ce-head b { color: #e8eaed; }
+html[data-theme="dark"] .pe-zoom { accent-color: #8ab4f8; }
+html[data-theme="dark"] .pe-zoom-marks { color: #9aa0a6; }
+html[data-theme="dark"] .power-btn { background: #3c4043; color: #8ab4f8; }
+html[data-theme="dark"] .power-btn.cancel { background: transparent; color: #bdc1c6; }
+html[data-theme="dark"] .power-btn.shutdown { background: #f28b82; color: #202124; }
+html[data-theme="dark"] .qm-chip { color: #e8eaed; }
+html[data-theme="dark"] .qm-chip:active { background: #35363a; }
+html[data-theme="dark"] .qm-chip svg { fill: #9aa0a6; }
+html[data-theme="dark"] .qm-item,
+html[data-theme="dark"] .pm-item,
+html[data-theme="dark"] .pe-btn { background: #3c4043; color: #e8eaed; }
+html[data-theme="dark"] .qm-item:active,
+html[data-theme="dark"] .pm-item:active,
+html[data-theme="dark"] .pe-btn:active { background: #4a4d51; }
+html[data-theme="dark"] .qm-pages { border-top-color: rgba(255, 255, 255, 0.12); }
+html[data-theme="dark"] .qm-page { background: #3c4043; color: #e8eaed; }
+html[data-theme="dark"] .qm-page.on { background: #8ab4f8; color: #202124; }
+html[data-theme="dark"] .qm-item svg,
+html[data-theme="dark"] .pm-item svg { fill: #8ab4f8; }
+html[data-theme="dark"] .pm-item.danger svg { fill: #f28b82; }
+html[data-theme="dark"] .pm-vbtn { background: #3c4043; color: #e8eaed; }
+html[data-theme="dark"] .pm-vbtn svg { fill: #8ab4f8; }
+html[data-theme="dark"] .pm-vbtn.on { background: #8ab4f8; color: #202124; }
+html[data-theme="dark"] .pm-vbtn.on svg { fill: #202124; }
+html[data-theme="dark"] .pm-volume { accent-color: #8ab4f8; }
+html[data-theme="dark"] .pm-time { color: #9aa0a6; }
+html[data-theme="dark"] .pm-seekbar { accent-color: #f28b82; }
+html[data-theme="dark"] .pm-fit-label,
+html[data-theme="dark"] .ce-count,
+html[data-theme="dark"] .ce-note { color: #9aa0a6; }
+html[data-theme="dark"] .pm-seg { background: #3c4043; }
+html[data-theme="dark"] .pm-seg button { color: #e8eaed; }
+html[data-theme="dark"] .pm-seg button.on,
+html[data-theme="dark"] .pe-btn.primary { background: #8ab4f8; color: #202124; }
+html[data-theme="dark"] .pe-btn.danger { background: transparent; color: #f28b82; }
+html[data-theme="dark"] .pm-comment { color: #e8eaed; }
+html[data-theme="dark"] .ce-text { background: #202124; border-color: #5f6368; color: #e8eaed; }
+html[data-theme="dark"] .ce-text:focus { border-color: #8ab4f8; }
+html[data-theme="dark"] .ce-error { color: #f28b82; }
+
+/* ---- Clock panel (Hybrid landscape) ---- */
+html[data-panel-theme="dark"] .cw-panel { background: #202124; color: #e8eaed; border-bottom-color: #3c4043; }
+html[data-panel-theme="dark"] .cw-panel .cw-ampm,
+html[data-panel-theme="dark"] .cw-panel .cw-date,
+html[data-panel-theme="dark"] .cw-panel .cw-hilo,
+html[data-panel-theme="dark"] .cw-panel .cw-extra { color: #9aa0a6; }
+
+/* ---- Day panel and its event sheet ---- */
+html[data-panel-theme="dark"] .cal-panel,
+html[data-panel-theme="dark"] .cal-sheet { background: #202124; color: #e8eaed; }
+html[data-panel-theme="dark"] .cal-header { border-bottom-color: #3c4043; }
+html[data-panel-theme="dark"] .cal-date,
+html[data-panel-theme="dark"] .cal-empty-title,
+html[data-panel-theme="dark"] .cal-empty-line,
+html[data-panel-theme="dark"] .cal-sheet-when,
+html[data-panel-theme="dark"] .cal-sheet-desc { color: #e8eaed; }
+html[data-panel-theme="dark"] .cal-count,
+html[data-panel-theme="dark"] .cal-col-head,
+html[data-panel-theme="dark"] .cal-sheet-calendar { color: #9aa0a6; }
+html[data-panel-theme="dark"] .cal-none { color: #80868b; }
+/* Event cards: bright solid fills with dark text in the calendar's hue (cardTint/cardText, like Google
+   Calendar's dark mode); past ones fade less than in light mode. */
+html[data-panel-theme="dark"] .cal-event-time { color: inherit; opacity: 0.85; }
+html[data-panel-theme="dark"] .cal-event.past { opacity: 0.75; }
+/*
+ * The event happening now: the same as on the light panel (user 2026-10-19; was a red outline with a halo): the
+ * outline in the calendar's colour, darkened (calendar-day.css), and the blinking red badge.
+ */
+html[data-panel-theme="dark"] .cal-nav:active { background: #35363a; }
+html[data-panel-theme="dark"] .cal-nav svg,
+html[data-panel-theme="dark"] .cal-full svg,
+html[data-panel-theme="dark"] .cal-sheet-location svg { fill: #9aa0a6; }
+html[data-panel-theme="dark"] .cal-empty-icon svg { fill: #5f6368; }
+html[data-panel-theme="dark"] .cal-full { background: #2d2e31; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+html[data-panel-theme="dark"] .cal-sheet-close { color: #8ab4f8; }
+html[data-panel-theme="dark"] .cal-sheet-item-time { color: #9aa0a6; }
+html[data-panel-theme="dark"] .cal-sheet-btn { background: rgba(138, 180, 248, 0.16); color: #8ab4f8; }
+html[data-panel-theme="dark"] .cal-sheet-btn.quiet { background: #3c4043; color: #e8eaed; }
+html[data-panel-theme="dark"] .cal-sheet-item:active { background: rgba(138, 180, 248, 0.16); }
+html[data-panel-theme="dark"] .cal-sheet-close:active { background: rgba(138, 180, 248, 0.16); }
+
+/* ---- Full-screen calendar ---- */
+html[data-theme="dark"] .cal-view { background: #202124; }
+html[data-theme="dark"] .fcv {
+  --cal-bg: #202124;
+  --cal-text: #e8eaed;
+  --cal-muted: #9aa0a6;
+  --cal-line: #3c4043;
+  --cal-accent: #8ab4f8;
+  --cal-today-bg: rgba(138, 180, 248, 0.08);
+  --cal-now: #f2665b;
+  --fc-neutral-bg-color: #2d2e31;
+  --fc-list-event-hover-bg-color: #35363a;
+}
+html[data-theme="dark"] .fcv-btn,
+html[data-theme="dark"] .fcv-views { background: #3c4043; color: #e8eaed; }
+html[data-theme="dark"] .fcv-btn:active { background: #4a4d51; }
+html[data-theme="dark"] .fcv-btn svg { fill: #e8eaed; }
+html[data-theme="dark"] .fcv-back { background: rgba(138, 180, 248, 0.16); color: #8ab4f8; }
+html[data-theme="dark"] .fcv-back svg { fill: #8ab4f8; }
+html[data-theme="dark"] .fcv-title { color: #e8eaed; }
+html[data-theme="dark"] .fcv-seg { color: #9aa0a6; }
+html[data-theme="dark"] .fcv-seg.active { background: #202124; color: #8ab4f8; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+html[data-theme="dark"] .fcv-updated { color: #9aa0a6; }
+html[data-theme="dark"] .fcv-chip { background: #2d2e31; border-color: #5f6368; color: #e8eaed; }
+html[data-theme="dark"] .fcv-chip.off { color: #80868b; }
+html[data-theme="dark"] .tg-dayhead.today .tg-dnum,
+html[data-theme="dark"] .mg-day.today .mg-num { color: #202124; }
+html[data-theme="dark"] .mg-bar { box-shadow: 0 0 0 1px var(--cal-bg); }
+html[data-theme="dark"] .tg-event .tg-time { color: inherit; opacity: 0.85; }
+/* Thin dark gaps between side-by-side events. */
+html[data-theme="dark"] .tg-event,
+html[data-theme="dark"] .tg-bar { box-shadow: 0 0 0 1px var(--cal-bg); }
+html[data-theme="dark"] .fcv.fade-past .past { opacity: 0.75; }
+
+/* ---- Warnings: the popup's secondary button ---- */
+html[data-theme="dark"] .wn-btn { background: #3c4043; color: #e8eaed; }
+html[data-theme="dark"] .wn-btn.primary { background: #8ab4f8; color: #202124; }

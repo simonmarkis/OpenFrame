@@ -1,0 +1,218 @@
+/* calendar_day panel (SPEC §11). Sizes are CSS px; the WebView's DPR is 0.85, so
+   1 CSS px ≈ 0.85 device px (e.g. 21px title ≈ 18 device px, per the spec). */
+
+.cal-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  color: #202124;
+  font-family: var(--of-cal-font, sans-serif);
+  overflow: hidden;
+  user-select: none;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px 12px;
+  border-bottom: 1px solid #e3e3e3;
+}
+.cal-heading { flex: 1; text-align: center; min-width: 0; }
+.cal-date { font-size: 24px; font-weight: bold; color: #3c4043; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-count { font-size: calc(16px * var(--of-cal-scale, 1)); color: #5f6368; margin-top: 3px; }
+
+.cal-nav, .cal-full, .cal-event, .cal-sheet-close {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-nav { width: 56px; height: 56px; padding: 12px; border-radius: 50%; flex: none; }
+.cal-nav:active { background: #eee; }
+.cal-nav svg { width: 32px; height: 32px; fill: #3c4043; }
+
+.cal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  padding: 14px 14px 90px;
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+.cal-body.no-full { padding-bottom: 24px; }
+.cal-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cal-col-head { font-size: calc(17px * var(--of-cal-scale, 1)); font-weight: bold; color: #5f6368; margin: 0 4px 8px; }
+.cal-list { display: flex; flex-direction: column; gap: 10px; }
+.cal-none { font-size: calc(17px * var(--of-cal-scale, 1)); color: #80868b; padding: 8px 4px; }
+
+.cal-event {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px 13px;
+  border-radius: 14px;
+}
+.cal-event:active { filter: brightness(0.95); }
+.cal-event.past { opacity: 0.5; }
+/*
+ * The event happening now (SPEC §11): outline inside the card (nothing clipped), badge in its own column with the
+ * same ring (user 2026-10-16). The outlines sit on ::after layers that only fade (1 → 0.25 → 1 each second), so
+ * the GPU composites the pulse without repainting the card; the panel's 30 s redraw restarts it (fine).
+ */
+.cal-event.now { position: relative; display: flex; align-items: flex-start; gap: 10px; }
+.cal-event.now::after,
+.cal-now-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* The card's outline stays steady; only the badge pulses (user 2026-10-19: the badge is enough). */
+.cal-event.now::after { box-shadow: inset 0 0 0 3px var(--now, #d93025); }
+/*
+ * The badge, the same on light and dark panels (user 2026-10-19): always red, never the calendar's colour; it
+ * fades white ↔ red with its red ring fading in step (white while the ring is brightest). The text stays dark:
+ * readable on white and on this red (4.9:1) at every moment.
+ */
+.cal-now-badge::after {
+  box-shadow: 0 0 0 3px #ff2d20;
+  will-change: opacity;
+  animation: cal-now-pulse 1s ease-in-out infinite;
+}
+@keyframes cal-now-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes cal-now-badge {
+  0%, 100% { background: #fff; }
+  50% { background: #ff2d20; }
+}
+.cal-event-main { flex: 1; min-width: 0; }
+.cal-now-badge {
+  position: relative;
+  flex: none;
+  /*
+   * Centered on the letters, not the line: the font keeps room below for descenders, which "Now" has none of
+   * (measured on the frame: 3 px above the letters, 8 below). The extra top padding moves the text down by half.
+   */
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(22px * var(--of-cal-scale, 1));
+  margin-top: 1px;
+  padding: calc(6px * var(--of-cal-scale, 1)) 10px 0;
+  border-radius: 12px;
+  background: #fff;
+  color: #202124;
+  font-size: calc(14px * var(--of-cal-scale, 1));
+  font-weight: bold;
+  line-height: 1;
+  white-space: nowrap;
+  animation: cal-now-badge 1s ease-in-out infinite;
+}
+.cal-event.declined .cal-event-title { text-decoration: line-through; } /* the user said No (calendar email) */
+.cal-event-title {
+  font-size: calc(21px * var(--of-cal-scale, 1));
+  font-weight: bold;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.cal-event-time { font-size: calc(15px * var(--of-cal-scale, 1)); color: #3c4043; margin-top: 4px; }
+
+.cal-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-bottom: 40px;
+}
+.cal-empty-icon svg { width: 104px; height: 104px; fill: #9aa0a6; }
+.cal-empty-title { font-size: calc(23px * var(--of-cal-scale, 1)); font-weight: bold; color: #3c4043; margin-top: 16px; }
+.cal-empty-line { font-size: calc(17px * var(--of-cal-scale, 1)); color: #3c4043; margin-top: 10px; }
+
+.cal-full {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 56px;
+  height: 56px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+.cal-full svg { width: 28px; height: 28px; fill: #3c4043; }
+
+/* Event details sheet */
+.cal-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.cal-sheet-backdrop[hidden] { display: none; }
+.cal-sheet {
+  width: 640px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  background: #fff;
+  color: #202124;
+  border-radius: 18px;
+  border-top: 10px solid var(--accent);
+  padding: 24px 28px 20px;
+  font-family: var(--of-cal-font, sans-serif);
+}
+.cal-sheet-title { font-size: 30px; font-weight: bold; line-height: 1.25; }
+.cal-sheet-when { font-size: 20px; color: #3c4043; margin-top: 10px; }
+.cal-sheet-location { display: flex; gap: 8px; align-items: flex-start; font-size: 19px; margin-top: 16px; }
+.cal-sheet-location svg { width: 24px; height: 24px; flex: none; fill: #5f6368; }
+.cal-sheet-desc {
+  font-size: 18px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 16px;
+  color: #3c4043;
+}
+.cal-sheet-calendar { display: flex; gap: 10px; align-items: center; font-size: 18px; color: #5f6368; margin-top: 20px; }
+.cal-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); }
+.cal-sheet-close {
+  display: block;
+  margin: 20px 0 0 auto;
+  padding: 12px 22px;
+  font-size: 19px;
+  font-weight: bold;
+  border-radius: 10px;
+  color: #1a73e8;
+}
+.cal-sheet-close:active { background: #e8f0fe; }
+/* Hide / Unhide and Close on one row (SPEC §11). */
+.cal-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px; }
+.cal-sheet-actions .cal-sheet-close { margin: 0; }
+.cal-sheet-spacer { flex: 1; }
+.cal-sheet-btn {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #e8f0fe;
+  color: #1a73e8;
+  font: inherit;
+  font-size: 18px;
+  font-weight: bold;
+}
+.cal-sheet-btn.quiet { background: #f1f3f4; color: #3c4043; }
+.cal-sheet-btn:active { filter: brightness(0.95); }

@@ -1,0 +1,119 @@
+/* `photo` widget (slideshow). Fills its layout box. */
+
+.ss {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Two stacked layers; the incoming one fades in on top of the outgoing one. */
+.ss-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: 1;
+  overflow: hidden; /* a zoomed-in photo (SPEC §15) is larger than its box */
+  background: #000;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+}
+.ss-layer.top { z-index: 2; }
+.ss-layer.active { opacity: 1; }
+
+/* A video plays behind the page (SPEC §6): its layer has a window (clip-path) and nothing paints behind it. */
+.ss.video-on { background: transparent; }
+
+/* ▶ on a video's poster: tap to play (Autoplay off), or just a mark (other browsers can't play it). */
+.ss-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M8 5v14l11-7z'/%3E%3C/svg%3E") 56% 50% / 60% no-repeat;
+  z-index: 1;
+}
+.ss-play-badge { width: 72px; height: 72px; margin: -36px 0 0 -36px; pointer-events: none; }
+
+.ss-layer img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  -webkit-user-drag: none;
+}
+.ss-layer .bg { object-fit: cover; }
+.ss-layer .photo { object-fit: contain; }
+
+.ss-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  color: #eee;
+}
+.ss-empty-title { font-size: 36px; }
+.ss-empty-text { font-size: 20px; opacity: 0.75; max-width: 900px; line-height: 1.4; }
+
+/* Layout editor: a still test card (color bars, its ratio) instead of the photos (SPEC §14). Sized with
+   container units like a photo shown Fit (contained) or Fill (covering); --r = width / height. */
+.ss-sample {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #202124;
+  container-type: size;
+  pointer-events: none;
+}
+.ss-sample-pic {
+  position: relative;
+  flex: none;
+  width: min(100cqw, calc(100cqh * var(--r)));
+  height: min(100cqh, calc(100cqw / var(--r)));
+  background:
+    linear-gradient(to right, #c0c0c0 0 14.29%, #c0c000 14.29% 28.57%, #00c0c0 28.57% 42.86%, #00c000 42.86% 57.14%,
+      #c000c0 57.14% 71.43%, #c00000 71.43% 85.71%, #0000c0 85.71%) top / 100% 67% no-repeat,
+    linear-gradient(to right, #0000c0 0 14.29%, #131313 14.29% 28.57%, #c000c0 28.57% 42.86%, #131313 42.86% 57.14%,
+      #00c0c0 57.14% 71.43%, #131313 71.43% 85.71%, #c0c0c0 85.71%) 0 72% / 100% 9% no-repeat,
+    linear-gradient(to right, #00214c 0 18%, #fff 18% 36%, #32006a 36% 54%, #131313 54% 72%, #090909 72% 82%, #1d1d1d 82%) bottom / 100% 25% no-repeat;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+.ss-sample-pic.fill { width: max(100cqw, calc(100cqh * var(--r))); height: max(100cqh, calc(100cqw / var(--r))); }
+.ss-sample-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  padding: 0.25em 0.6em;
+  border-radius: 0.35em;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font: min(9cqw, 9cqh) / 1.1 sans-serif;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+.ss-sample-label b { font-size: 1em; }
+.ss-sample-label span { font-size: 0.32em; opacity: 0.9; }
+
+/* Seek bar dragged: the video's preview strip shows the picture under the finger, over the paused video. */
+.ss-scrub { position: absolute; z-index: 4; background-repeat: no-repeat; background-color: #000; pointer-events: none; }
+.ss-scrub[hidden] { display: none; }

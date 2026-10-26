@@ -1,0 +1,246 @@
+/* calendar_full (SPEC §11): toolbar, legend, OpenFrame's day/week time grid and month grid
+   (month) overrides. CSS px (DPR 0.85), touch-sized controls; colors match the day panel.
+   Grid colors are variables so a dark theme (SPEC §9a) is a variable swap. */
+
+.fcv {
+  --cal-bg: #fff;
+  --cal-text: #202124;
+  --cal-muted: #5f6368;
+  --cal-line: #e3e3e3;
+  --cal-accent: #1a73e8;
+  --cal-today-bg: rgba(26, 115, 232, 0.05);
+  --cal-now: #ea4335;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--cal-bg);
+  color: var(--cal-text);
+  font-family: var(--of-cal-font, sans-serif);
+  user-select: none;
+}
+
+/* ---- toolbar ---- */
+.fcv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px 8px; }
+.fcv-btn, .fcv-seg, .fcv-chip {
+  font-family: inherit;
+  border: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.fcv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  min-width: 52px;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font-size: 18px;
+  font-weight: bold;
+}
+.fcv-btn:active { background: #e2e5e7; }
+.fcv-btn.fcv-icon { justify-content: center; padding: 0 12px; }
+.fcv-btn svg { width: 28px; height: 28px; fill: #3c4043; flex: none; }
+.fcv-back { background: #e8f0fe; color: #1a73e8; }
+.fcv-back svg { fill: #1a73e8; }
+.fcv-nav { display: flex; gap: 6px; }
+.fcv-title {
+  flex: 1;
+  min-width: 220px;
+  font-size: 26px;
+  font-weight: bold;
+  color: #3c4043;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fcv-views { display: flex; padding: 4px; border-radius: 12px; background: #f1f3f4; }
+.fcv-seg { height: 44px; padding: 0 18px; border-radius: 9px; background: none; color: #5f6368; font-size: 17px; font-weight: bold; }
+.fcv-seg.active { background: #fff; color: #1a73e8; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.fcv-refresh { display: flex; align-items: center; gap: 10px; margin-left: auto; } /* stays right when the bar wraps (portrait) */
+.fcv-updated { font-size: 15px; color: #5f6368; white-space: nowrap; }
+.fcv-btn.spinning svg { animation: fcv-spin 1s linear infinite; }
+@keyframes fcv-spin { to { transform: rotate(360deg); } }
+
+/* ---- legend: tap a calendar to hide/show it ---- */
+.fcv-legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 10px; }
+.fcv-legend:empty { display: none; }
+.fcv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px 0 12px;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 16px;
+}
+.fcv-chip-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--accent); background: var(--accent); }
+.fcv-chip.off { color: #9aa0a6; text-decoration: line-through; }
+.fcv-chip.off .fcv-chip-dot { background: transparent; }
+
+/* ---- content area: day/week grid or month grid ---- */
+.fcv-cal { position: relative; flex: 1; min-height: 0; }
+.fcv-host { position: absolute; inset: 0 8px 8px; }
+.fcv.fade-past .past { opacity: 0.5; }
+
+/* ---- day/week time grid (calendar-timegrid.js) ---- */
+.tg { position: absolute; inset: 0; display: flex; flex-direction: column; --tg-axis: 58px; }
+.tg-row { display: grid; grid-template-columns: var(--tg-axis) repeat(var(--tg-days), minmax(0, 1fr)); }
+.tg-head { border-bottom: 1px solid var(--cal-line); }
+.tg-corner { align-self: end; padding-bottom: 10px; text-align: center; font-size: 13px; color: var(--cal-muted); }
+.tg-dayhead { padding: 6px 0 8px; border-left: 1px solid var(--cal-line); text-align: center; }
+.tg-dow { display: block; font-size: 14px; color: var(--cal-muted); text-transform: uppercase; }
+.tg-dnum { display: block; width: 42px; height: 42px; margin: 2px auto 0; border-radius: 50%; font-size: 24px; line-height: 42px; }
+.tg-dayhead.today .tg-dow { color: var(--cal-accent); font-weight: bold; }
+.tg-dayhead.today .tg-dnum { background: var(--cal-accent); color: #fff; }
+
+.tg-allday { border-bottom: 2px solid var(--cal-line); }
+.tg-axis-label { padding-top: 8px; text-align: center; font-size: 13px; color: var(--cal-muted); }
+.tg-lanes { grid-column: 2 / -1; position: relative; overflow-y: auto; border-left: 1px solid var(--cal-line); }
+.tg-lanes-inner { position: relative; }
+
+.tg-body { flex: 1; min-height: 0; overflow-y: auto; touch-action: pan-y; scrollbar-width: none; }
+.tg-body::-webkit-scrollbar { display: none; }
+.tg-grid { position: relative; }
+.tg-axis { position: relative; }
+.tg-hour { position: absolute; right: 8px; transform: translateY(-50%); font-size: 13px; color: var(--cal-muted); white-space: nowrap; }
+/* Hour lines are a background (72px = HOUR_PX in calendar-timegrid.js), not one element per slot. */
+.tg-col {
+  position: relative;
+  border-left: 1px solid var(--cal-line);
+  background-image: repeating-linear-gradient(to bottom, var(--cal-line) 0, var(--cal-line) 1px, transparent 1px, transparent 72px);
+}
+.tg-col.today { background-color: var(--cal-today-bg); }
+.tg-now { position: absolute; left: -1px; right: 0; z-index: 3; height: 2px; background: var(--cal-now); pointer-events: none; }
+.tg-now::before { content: ''; position: absolute; left: -6px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--cal-now); }
+
+/* Events: light calendar tint with a colored left edge (like the day panel's cards). */
+.tg-event, .tg-bar {
+  position: absolute;
+  overflow: hidden;
+  border: 0;
+  border-left: 4px solid;
+  border-radius: 6px;
+  color: var(--cal-text);
+  font-family: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+/* overflow: clip (not hidden) so the label can stick to the top of the scrolling view; the outline in the
+   page colour separates events drawn over each other (Google-style overlaps, 2026-10-19). */
+.tg-event { padding: 3px 6px; display: flex; flex-direction: column; justify-content: flex-start; overflow: clip; box-shadow: 0 0 0 1px var(--cal-bg); }
+.tg-label { position: sticky; top: 0; min-width: 0; }
+.tg-event.short .tg-label { display: flex; align-items: center; gap: 6px; }
+/* Hidden events, shown with the legend's "Hidden" chip. */
+.fcv .is-hidden { opacity: 0.45; outline: 2px dashed var(--cal-muted); outline-offset: -2px; }
+.fcv-chip.hidden-chip .fcv-chip-dot { border-style: dashed; background: transparent; border-color: var(--cal-muted); }
+.tg-event .tg-title { font-size: calc(15px * var(--of-cal-scale, 1)); font-weight: bold; line-height: 1.2; overflow: hidden; }
+.tg-event .tg-time { font-size: calc(13px * var(--of-cal-scale, 1)); color: #3c4043; margin-top: 1px; white-space: nowrap; }
+.tg-event.short { flex-direction: row; align-items: center; gap: 6px; padding-top: 0; padding-bottom: 0; }
+/* Short events: one line, the title wins the space; the time is clipped first. */
+.tg-event.short .tg-title { white-space: nowrap; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.tg-event.short .tg-time { flex: 1 1 0; min-width: 0; overflow: hidden; }
+.tg-bar { height: calc(26px * var(--of-cal-scale, 1)); padding: 0 8px; font-size: calc(14px * var(--of-cal-scale, 1)); font-weight: bold; white-space: nowrap; text-overflow: ellipsis; line-height: calc(26px * var(--of-cal-scale, 1)); }
+.tg-bar.from-prev { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.tg-bar.to-next { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.tg-event:active, .tg-bar:active { filter: brightness(0.95); }
+
+/* ---- Month grid (calendar-month.js, SPEC §11): bars for all-day and multi-day events, lines for the rest. ---- */
+.mg { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.mg-head, .mg-week { display: grid; grid-template-columns: var(--mg-wk) repeat(7, minmax(0, 1fr)); }
+.mg-head { border-bottom: 1px solid var(--cal-line); }
+.mg-dow { padding: 6px 0 8px; text-align: center; font-size: 14px; color: var(--cal-muted); text-transform: uppercase; }
+.mg-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.mg-week { position: relative; flex: 1 1 0; min-height: 0; border-bottom: 1px solid var(--cal-line); }
+.mg-wk { align-self: start; overflow: hidden; padding-top: 8px; text-align: center; font-size: 13px; color: var(--cal-muted); }
+.mg-day { border-left: 1px solid var(--cal-line); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mg-day:active { background: var(--cal-today-bg); }
+.mg-day.today { background: var(--cal-today-bg); }
+.mg-num {
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 3px 0 0 6px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 28px;
+  text-align: center;
+  color: var(--cal-text);
+}
+.mg-day.other .mg-num { color: var(--cal-muted); opacity: 0.6; }
+.mg-day.today .mg-num { background: var(--cal-accent); color: #fff; font-weight: bold; }
+.mg-bar, .mg-line, .mg-more {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  height: calc(var(--mg-line) - 2px);
+  overflow: hidden;
+  border: 0;
+  padding: 0 6px;
+  background: none;
+  color: var(--cal-text);
+  font-family: inherit;
+  font-size: calc(14px * var(--of-cal-scale, 1));
+  line-height: calc(var(--mg-line) - 2px);
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  -webkit-tap-highlight-color: transparent;
+}
+.mg-bar { border-left: 4px solid; border-radius: 6px; font-weight: bold; }
+.mg-bar.from-prev { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.mg-bar.to-next { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.mg-line { display: flex; align-items: center; gap: 5px; border-radius: 6px; padding: 0 4px; }
+.mg-line:active, .mg-bar:active { filter: brightness(0.95); background-color: var(--cal-today-bg); }
+.mg-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+.mg-time { flex: none; color: var(--cal-muted); }
+.mg-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+.mg-bar .mg-title { display: block; }
+.mg-more { font-weight: bold; color: var(--cal-accent); }
+.mg-bar.declined .mg-title, .mg-line.declined .mg-title { text-decoration: line-through; }
+
+/* "+N more": the day's list in the event sheet. */
+.cal-sheet-list { display: flex; flex-direction: column; gap: 4px; margin-top: 14px; max-height: 55vh; overflow-y: auto; }
+.cal-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 19px;
+  text-align: left;
+}
+.cal-sheet-item:active { background: rgba(26, 115, 232, 0.08); }
+.cal-sheet-item .cal-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; }
+.cal-sheet-item-time { flex: none; min-width: 7.5em; color: #5f6368; }
+.cal-sheet-item-title { min-width: 0; font-weight: bold; }
+.cal-sheet-item.declined .cal-sheet-item-title { text-decoration: line-through; }
+
+.tg-event.declined .tg-title, .tg-bar.declined .tg-title { text-decoration: line-through; }
+
+/* ---- compact: a smaller box on a custom page (SPEC §14). The full screen (904 px wide in portrait and
+   up) is unchanged; narrower boxes get smaller controls, shorter ones drop the legend (the full-screen
+   calendar from the calendar button still has it). ---- */
+.w-grid.w-calendar_full > .fcv { container-type: size; }
+@container (max-width: 880px) {
+  .fcv-bar { gap: 8px 10px; padding: 10px 12px 6px; }
+  .fcv-btn { height: 46px; min-width: 46px; padding: 0 14px; font-size: 16px; }
+  .fcv-btn svg { width: 24px; height: 24px; }
+  .fcv-back span { display: none; }
+  .fcv-title { min-width: 150px; font-size: 21px; }
+  .fcv-seg { height: 38px; padding: 0 12px; font-size: 15px; }
+  .fcv-updated { display: none; }
+}
+@container (max-height: 640px) {
+  .fcv-legend { display: none; }
+}

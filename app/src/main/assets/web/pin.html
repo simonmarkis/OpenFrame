@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenFrame</title>
+  <!-- Shown to other devices until they enter the web access PIN (SPEC §16a). Self-contained:
+       nothing else is served before sign-in. -->
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('of-theme') || 'light'; } catch (e) { /* no storage */ }</script>
+  <style>
+    :root { --bg: #f1f3f4; --card: #fff; --text: #202124; --muted: #5f6368; --accent: #1a73e8; --danger: #d93025; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { display: flex; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; background: var(--bg); color: var(--text); font-family: sans-serif; }
+    .card { width: 100%; max-width: 380px; padding: 28px 24px; border-radius: 20px; background: var(--card); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12); text-align: center; }
+    svg { width: 48px; height: 48px; fill: var(--accent); }
+    h1 { margin: 10px 0 6px; font-size: 22px; }
+    p { margin: 0 0 18px; color: var(--muted); line-height: 1.45; font-size: 15px; }
+    input { width: 100%; height: 56px; border: 1px solid #c4c7c5; border-radius: 12px; font-size: 28px; letter-spacing: 0.4em; text-align: center; }
+    input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    html[data-theme="dark"] { --bg: #202124; --card: #2d2e31; --text: #e8eaed; --muted: #9aa0a6; --accent: #8ab4f8; --danger: #f28b82; color-scheme: dark; }
+    html[data-theme="dark"] .card { box-shadow: none; }
+    html[data-theme="dark"] input { background: #202124; color: var(--text); border-color: #5f6368; }
+    html[data-theme="dark"] button { color: #202124; }
+    button { width: 100%; height: 52px; margin-top: 14px; border: 0; border-radius: 26px; background: var(--accent); color: #fff; font-size: 17px; font-weight: bold; }
+    button:disabled { opacity: 0.6; }
+    .error { min-height: 1.4em; margin: 12px 0 0; color: var(--danger); font-size: 14px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z"/></svg>
+    <h1>OpenFrame</h1>
+    <form id="form" hidden>
+      <p>Enter the frame's PIN. You can see it on the frame: tap the photo, then Settings → System.</p>
+      <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="current-password" aria-label="PIN" required>
+      <button id="go" type="submit">Unlock</button>
+      <div class="error" id="error" role="alert"></div>
+    </form>
+    <p id="nopin" hidden>No PIN has been set yet, so phones and computers can't open this frame.
+      On the frame: tap the photo, then Settings → System → Web access PIN.</p>
+  </div>
+  <script>
+    const form = document.getElementById('form');
+    const pin = document.getElementById('pin');
+    const go = document.getElementById('go');
+    const error = document.getElementById('error');
+    // Signed in: show the page that was asked for (or the frame's page if this one was opened directly).
+    const reopen = () => location.replace(location.pathname === '/pin.html' ? '/' : location.href);
+
+    fetch('/api/auth/state', { cache: 'no-store' }).then((r) => r.json()).then((s) => {
+      // The frame's look right now: this phone may never have seen it (or Safari cleared it).
+      if (s.theme === 'light' || s.theme === 'dark') {
+        document.documentElement.dataset.theme = s.theme;
+        try { localStorage.setItem('of-theme', s.theme); } catch (e) { /* no storage */ }
+      }
+      if (s.signedIn) { reopen(); return; }
+      document.getElementById(s.pinSet ? 'form' : 'nopin').hidden = false;
+      if (s.pinSet) pin.focus();
+    }).catch(() => { form.hidden = false; error.textContent = "Can't reach the frame."; });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      error.textContent = '';
+      go.disabled = true;
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin.value }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) { reopen(); return; }
+        error.textContent = body.error || `The frame answered HTTP ${res.status}`;
+        pin.value = '';
+        pin.focus();
+      } catch (err) {
+        error.textContent = "Can't reach the frame.";
+      } finally {
+        go.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

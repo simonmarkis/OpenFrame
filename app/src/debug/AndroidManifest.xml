@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Debug builds are test-only so the sleep admin can always be removed from a computer
+      (adb shell dpm remove-active-admin app.openframe/.SleepAdminReceiver; SPEC §18).
+      Install with adb install -t (scripts/deploy.ps1 does).
+    -->
+    <application android:testOnly="true" />
+</manifest>

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up the iPhone Shortcut</title>
+  <!-- Step-by-step guide for the "Send to Frame" Shortcut (SPEC §17), meant to be opened on the
+       iPhone next to the Shortcuts app. The frame's address and the upload key are filled in at
+       runtime (never stored in this file). Action blocks are drawn to look like the Shortcuts app. -->
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('of-theme') || 'light'; } catch (e) { /* no storage */ }</script>
+  <style>
+    :root { --bg: #f2f2f7; --card: #fff; --text: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea;
+      --accent: #007aff; --token: #e8f0fe; --token-text: #0a5bd6; --ok: #34c759;
+      --c-scripting: #8e8e93; --c-media: #ff2d55; --c-web: #007aff; --c-photo: #ff9500; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { padding: 18px 16px 48px; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+    main { max-width: 560px; margin: 0 auto; }
+    h1 { margin: 6px 0 6px; font-size: 26px; }
+    .lead { margin: 0 0 18px; color: var(--muted); line-height: 1.45; }
+    .step { margin-bottom: 14px; padding: 16px; border-radius: 16px; background: var(--card); }
+    .step h2 { display: flex; gap: 10px; align-items: baseline; margin: 0 0 8px; font-size: 18px; }
+    .num { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 14px; }
+    p { margin: 6px 0; line-height: 1.45; }
+    .muted { color: var(--muted); font-size: 14px; }
+    b { font-weight: 600; }
+    /* Look-alike Shortcuts action blocks */
+    .action { margin: 10px 0 4px; padding: 12px 12px 12px 12px; border-radius: 12px; background: #f9f9fb; border: 1px solid var(--line); line-height: 2; font-size: 15px; }
+    .action.indent { margin-left: 18px; }
+    .action.indent2 { margin-left: 36px; }
+    .icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 6px; border-radius: 6px; color: #fff; font-size: 13px; vertical-align: -6px; }
+    .tok { padding: 2px 7px; border-radius: 6px; background: var(--token); color: var(--token-text); white-space: nowrap; }
+    .tok.var { background: #fff3e0; color: #b26a00; }
+    .warn { padding: 8px 12px; border-radius: 10px; background: #fef7e0; color: #5f4300; }
+    /* Long addresses wrap inside the box on phones; the chip continues on each line. */
+    .tok.url { white-space: normal; overflow-wrap: anywhere; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    .sub { display: block; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .end { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: #f9f9fb; border: 1px dashed var(--line); color: var(--muted); font-size: 14px; }
+    /* Values to paste */
+    .value { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+    .value code { flex: 1; min-width: 0; overflow-wrap: anywhere; font: 15px ui-monospace, Menlo, monospace; }
+    .value button { flex: none; height: 36px; padding: 0 14px; border: 0; border-radius: 18px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; }
+    .value button.done { background: var(--ok); }
+    html[data-theme="dark"] { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989f; --line: #38383a;
+      --accent: #0a84ff; --token: #1a2f4d; --token-text: #6cb2ff; color-scheme: dark; }
+    html[data-theme="dark"] .action, html[data-theme="dark"] .end { background: #2c2c2e; }
+    html[data-theme="dark"] .tok.var { background: #3a2a10; color: #ffb340; }
+    html[data-theme="dark"] .warn, html[data-theme="dark"] .note { background: #33290a; color: #f5d77a; }
+    .ready { display: flex; flex-direction: column; gap: 10px; }
+    .ready a.dl { display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 25px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; text-decoration: none; }
+    .note { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #fff8e1; color: #6b5200; font-size: 14px; line-height: 1.45; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Send photos to the frame from your iPhone</h1>
+    <p class="lead">Build this once in the <b>Shortcuts</b> app (about 5 minutes). Afterwards: select photos or videos in
+      <b>Photos</b> → Share → <b>Send to Frame</b>. Keep this page open next to Shortcuts; the two values you need have Copy buttons.</p>
+    <div class="note" style="margin-bottom:14px"><b>Already have the Shortcut?</b> Add the actions of <b>step 6</b> you don't have yet just above your “Get Contents of URL”, and change its address as in <b>step 7</b>. Then videos keep their date and place (converting a video drops them), and captions show the place's name (new: <b>Name</b>, <b>URL Encode</b>, and <code>&amp;place=</code>). Afterwards export it again for the frame (Settings → iPhone Shortcut).</div>
+
+    <!-- The user's own export, kept on the frame (Settings → Photos → iPhone Shortcut); shown when there is one. -->
+    <section class="step ready" id="ready" hidden>
+      <h2>Ready-made Shortcut</h2>
+      <p id="readyText">Download it, open it, and tap <b>Add Shortcut</b>: it is already set up for this frame, so you can skip the steps below.</p>
+      <a class="dl" id="readyLink" href="/shortcut/download">Download “Send to Frame”</a>
+      <p class="muted" id="readyHow">Safari asks to download it; then open it from the Downloads list (the arrow in the address bar).</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">1</span>Create the Shortcut</h2>
+      <p>Open <b>Shortcuts</b> → tap <b>+</b> (top right). Tap the name at the top and call it <b>Send to Frame</b>.</p>
+      <p>Tap the <b>ⓘ</b> button at the bottom → turn on <b>Show in Share Sheet</b> → Done.</p>
+      <p>A block appears at the top. Tap its first blue word (“Any”, or “Apps and 2 more”) and leave only <b>Images</b> and <b>Media</b> selected. It should read:</p>
+      <div class="action"><span class="icon" style="background:var(--c-scripting)">⇪</span>Receive <span class="tok">Images and Media</span> input from <span class="tok">Share Sheet</span></div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">2</span>Add “Repeat with Each”</h2>
+      <p>Tap the search field at the bottom, type <b>repeat</b>, and tap <b>Repeat with Each</b>. It should use <b>Shortcut Input</b>:</p>
+      <div class="action"><span class="icon" style="background:var(--c-scripting)">↻</span>Repeat with each item in <span class="tok var">Shortcut Input</span></div>
+      <div class="end">End Repeat</div>
+      <p class="muted">Steps 3 to 7 all go <b>inside</b> this block (between “Repeat” and “End Repeat”). If an action lands below End Repeat, drag it up.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">3</span>Photo or video? Get its media type</h2>
+      <p>Search <b>media type</b> (the action is <b>Get Details of Images</b>) and add it inside the repeat. Set it to get <b>Media Type</b> from <b>Repeat Item</b>:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-photo)">▣</span>Get <span class="tok">Media Type</span> from <span class="tok var">Repeat Item</span></div>
+      <p>Then search <b>if</b> → tap <b>If</b>. It picks up <b>Media Type</b> by itself; set the condition to <b>is</b> → <b>Image</b>:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-scripting)">Y</span>If <span class="tok">Media Type</span> <span class="tok">is</span> <span class="tok">Image</span></div>
+      <div class="end" style="margin-left:18px">Otherwise</div>
+      <div class="end" style="margin-left:18px">End If</div>
+      <p class="muted">A new If comes with <b>Otherwise</b> and <b>End If</b>. If yours has no Otherwise, delete the If and add it again.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">4</span>Photos: “Convert Image”</h2>
+      <p>Search <b>convert image</b> → add <b>Convert Image</b> right <b>under “If”</b> (above “Otherwise”). Set the format to <b>JPEG</b>.</p>
+      <div class="note"><b>Important:</b> tap the blue input and choose <b>Repeat Item</b>. It often fills in <b>Shortcut Input</b> by itself, and then every pass sends the <b>first</b> photo again (only one photo reaches the frame).</div>
+      <p>Tap <b>Show More</b> (the arrow) → turn on <b>Preserve Metadata</b> (keeps the date and location).</p>
+      <div class="action indent2"><span class="icon" style="background:var(--c-photo)">▣</span>Convert <span class="tok var">Repeat Item</span> to <span class="tok">JPEG</span>
+        <span class="sub">Preserve Metadata: <span class="tok">On</span></span></div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">5</span>Videos: “Encode Media”</h2>
+      <p>Search <b>encode</b> → add <b>Encode Media</b> <b>under “Otherwise”</b> (above “End If”). Input: <b>Repeat Item</b> (same check as step 4).</p>
+      <p>Tap <b>Show More</b> → <b>Size</b> → <b>1920×1080</b> (not the HEVC one: it keeps HDR videos in HDR, which the frame can't play).</p>
+      <div class="action indent2"><span class="icon" style="background:var(--c-media)">▶</span>Encode <span class="tok var">Repeat Item</span>
+        <span class="sub">Size: <span class="tok">1920×1080</span></span></div>
+      <p class="muted">Your block now reads: Get Media Type → If … is Image → Convert → Otherwise → Encode → End If.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">6</span>Date and place: four “Get Details” actions</h2>
+      <p>Converting a video drops its date and location, so the Shortcut sends them along. Add these <b>below “End If”</b>, still inside the repeat.</p>
+      <p class="warn">Not inside <b>Otherwise</b>: there the video would be replaced by the longitude, and the frame answers “The Shortcut sent text instead of the photo or video”. If they landed there, drag each one below <b>End If</b>.</p>
+      <p>Search <b>details of images</b> → add <b>Get Details of Images</b> → set it to get <b>Location</b> from <b>Repeat Item</b>:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-photo)">▣</span>Get <span class="tok">Location</span> from <span class="tok var">Repeat Item</span></div>
+      <p>Search <b>details of locations</b> → add <b>Get Details of Locations</b> → <b>Latitude</b> from <b>Location</b>. Add it once more for <b>Longitude</b>:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-web)">⌖</span>Get <span class="tok">Latitude</span> from <span class="tok var">Location</span></div>
+      <div class="action indent"><span class="icon" style="background:var(--c-web)">⌖</span>Get <span class="tok">Longitude</span> from <span class="tok var">Location</span></div>
+      <p>Add <b>Get Details of Locations</b> a third time → <b>Name</b> from <b>Location</b> (the place's name, as in the Photos app, for example a church or a park). Then search <b>URL encode</b> → add <b>URL Encode</b> → <b>Encode</b> the <b>Name</b>:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-web)">⌖</span>Get <span class="tok">Name</span> from <span class="tok var">Location</span></div>
+      <div class="action indent"><span class="icon" style="background:var(--c-scripting)">¶</span><span class="tok">Encode</span> <span class="tok var">Name</span></div>
+      <p class="muted">Photos keep their own date and place (step 4); sending them too does no harm. A video without a location just sends an empty one. Without a name the frame looks the place up on OpenStreetMap, or shows just the town.</p>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">7</span>Send it: “Get Contents of URL”</h2>
+      <p>Search <b>get contents</b> → tap <b>Get Contents of URL</b>. Place it <b>below the actions of step 6</b> but <b>above “End Repeat”</b>.</p>
+      <p>Tap the blue <b>URL</b> field and paste this address (it ends with <b>taken=</b>):</p>
+      <div class="value"><code id="url">…</code><button type="button" data-copy="url">Copy</button></div>
+      <p>Right after it, still in the URL field, add the date: tap <b>Repeat Item</b> in the bar above the keyboard (or <b>Select Variable</b>), tap the new blue <b>Repeat Item</b> → choose <b>Date Taken</b> → <b>Date Format</b> → <b>ISO 8601</b>.</p>
+      <p>Then type <code>&amp;lat=</code> and add the <b>Latitude</b> variable, then type <code>&amp;lon=</code> and add <b>Longitude</b>, then type <code>&amp;place=</code> and add <b>URL Encoded Text</b>. The <b>=</b> goes <b>before</b> each variable (with the variable in front of it, the frame gets no place). The URL reads:</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-web)">⇅</span><span class="tok url" id="urlTok2">http://…/api/upload?taken=</span><wbr><span class="tok var">Date Taken</span><wbr><span class="tok">&amp;lat=</span><wbr><span class="tok var">Latitude</span><wbr><span class="tok">&amp;lon=</span><wbr><span class="tok var">Longitude</span><wbr><span class="tok">&amp;place=</span><wbr><span class="tok var">URL Encoded Text</span></div>
+      <p class="warn">Tap the blue <b>Date Taken</b> once more and check it still says <b>ISO 8601</b>. Other date formats have spaces, and the address ends at the first space: the frame then gets no place and no name.</p>
+      <p>Tap <b>Show More</b>, then:</p>
+      <p>• <b>Method</b> → <b>POST</b><br>
+         • <b>Headers</b> → <b>Add new header</b>. Key:</p>
+      <div class="value"><code id="hname">X-Upload-Key</code><button type="button" data-copy="hname">Copy</button></div>
+      <p>&nbsp;&nbsp;Text (your frame's upload key):</p>
+      <div class="value"><code id="key">…</code><button type="button" data-copy="key">Copy</button></div>
+      <p>• <b>Request Body</b> → <b>File</b>. Tap <b>File</b> → choose <b>If Result</b> (the converted photo or video from step 4 or 5, not Shortcut Input).</p>
+      <div class="action indent"><span class="icon" style="background:var(--c-web)">⇅</span>Get contents of <span class="tok url" id="urlTok">http://…/api/upload?taken=…</span>
+        <span class="sub">Method: <span class="tok">POST</span><br>Headers: <span class="tok">X-Upload-Key</span> = <span class="tok">your key</span><br>Request Body: <span class="tok">File</span> · File: <span class="tok var">If Result</span></span></div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">8</span>Try it</h2>
+      <p>Open <b>Photos</b>, select one photo → <b>Share</b> → scroll the list of actions → <b>Send to Frame</b>.</p>
+      <p>The first time, iPhone asks to allow connecting to devices on your local network, and Shortcuts may ask to allow sending to this address: tap <b>Allow</b>.</p>
+      <p>The photo appears on the frame within a few slides. Sending the same photo again is fine: the frame skips copies it already has.</p>
+      <p class="warn"><b>Sending several photos at once?</b> Turn on <b>Settings → Shortcuts → Advanced → Allow Sharing Large Amounts of Data</b> once. Without it, iPhone stops the Shortcut when many photos or a video are selected.</p>
+      <div class="note">If something goes wrong, the Shortcut shows the frame's answer, for example “The upload key is wrong…”. Tell me what it says, or which step looked different, and I'll fix this guide.</div>
+    </section>
+
+    <p class="muted">The upload key only lets the Shortcut add photos and videos. You can replace it any time in
+      Settings → Photos → iPhone Shortcut → New key (then paste the new one in step 7). <a href="/settings#photos">Settings</a></p>
+  </main>
+
+  <script>
+    function copy(textValue, btn) {
+      // navigator.clipboard needs HTTPS; the frame is plain HTTP on the home network.
+      const t = document.createElement('textarea');
+      t.value = textValue;
+      t.setAttribute('readonly', '');
+      t.style.position = 'fixed';
+      t.style.opacity = '0';
+      document.body.append(t);
+      t.focus();
+      t.setSelectionRange(0, textValue.length); // iOS needs a selection range
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      t.remove();
+      btn.textContent = ok ? 'Copied' : 'Select it';
+      btn.classList.toggle('done', ok);
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 2000);
+    }
+
+    document.querySelectorAll('[data-copy]').forEach((b) => {
+      b.addEventListener('click', () => copy(document.getElementById(b.dataset.copy).textContent.trim(), b));
+    });
+
+    async function load() {
+      const get = async (path) => {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (r.status === 401) { location.reload(); throw new Error('signed out'); }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      };
+      const [sys, key] = await Promise.all([get('/api/system'), get('/api/upload/key')]);
+      const host = sys.network.ip || location.hostname;
+      const url = `http://${host}:8080/api/upload?taken=`;
+      document.getElementById('url').textContent = url;
+      document.getElementById('urlTok').textContent = `${url}…`;
+      document.getElementById('urlTok2').textContent = url;
+      document.getElementById('key').textContent = key.key;
+    }
+    load().catch((e) => { document.getElementById('key').textContent = `Couldn't load (${e.message}). Reload the page.`; });
+  </script>
+  <script>
+    // Ready-made Shortcut: offered only while it matches the frame's current upload key and address.
+    fetch('/api/shortcut', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((info) => {
+      if (!info || !info.hasFile) return;
+      document.getElementById('ready').hidden = false;
+      const why = [info.keyChanged && 'the upload key changed', info.addressChanged && "the frame's address changed"]
+        .filter(Boolean).join(' and ');
+      if (!why) return;
+      document.getElementById('readyLink').remove();
+      document.getElementById('readyHow').remove();
+      const t = document.getElementById('readyText');
+      t.className = 'warn';
+      t.textContent = 'The ready-made Shortcut on the frame is out of date (' + why + ' since it was made). ' +
+        'Build it with the steps below, or export it again and upload it in Settings → Photos → iPhone Shortcut.';
+    }).catch(() => {});
+  </script>
+  <script type="module">
+    // Dark mode follows Settings → Appearance (SPEC §9); theme.js remembers it for the next page.
+    import { applyTheme } from '/theme.js';
+    Promise.all([fetch('/api/config', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
+      fetch('/api/weather', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)])
+      .then(([config, weather]) => { if (config) applyTheme(config, weather); }).catch(() => {});
+  </script>
+</body>
+</html>

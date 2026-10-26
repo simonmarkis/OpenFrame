@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenFrame</string>
+    <string name="admin_label">OpenFrame sleep</string>
+    <string name="admin_description">Lets OpenFrame turn the screen off at sleep time. It can do nothing else.</string>
+</resources>

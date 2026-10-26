@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenFrame</title>
+  <link rel="stylesheet" href="test.css">
+</head>
+<body>
+  <main class="test">
+    <section class="clock">
+      <div id="time">--:--:--</div>
+      <div id="date"></div>
+    </section>
+
+    <section class="fade" aria-hidden="true">
+      <div class="slide a"></div>
+      <div class="slide b"></div>
+      <span>cross-fade</span>
+    </section>
+
+    <section class="info">
+      <h1>OpenFrame — Phase 0 test page</h1>
+      <dl id="facts"></dl>
+      <h2>Chromium 106 feature checks</h2>
+      <ul id="features"></ul>
+    </section>
+  </main>
+  <script src="test.js"></script>
+</body>
+</html>

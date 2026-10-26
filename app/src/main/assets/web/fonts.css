@@ -1,0 +1,20 @@
+/* Fonts for text styles (SPEC §9): the frame's own fonts (Android /system/fonts), bundled in fonts/
+   so phones and PCs draw the same. On the frame local() finds the installed copy first.
+   Licenses: fonts/LICENSES.txt. */
+
+@font-face { font-family: "OF Roboto"; font-weight: 300; src: local("Roboto Light"), local("Roboto-Light"), url("fonts/Roboto-Light.ttf"); }
+@font-face { font-family: "OF Roboto"; font-weight: 400; src: local("Roboto"), local("Roboto-Regular"), url("fonts/Roboto-Regular.ttf"); }
+@font-face { font-family: "OF Roboto"; font-weight: 700; src: local("Roboto Bold"), local("Roboto-Bold"), url("fonts/Roboto-Bold.ttf"); }
+
+@font-face { font-family: "OF Roboto Condensed"; font-weight: 400; src: local("Roboto Condensed"), local("RobotoCondensed-Regular"), url("fonts/RobotoCondensed-Regular.ttf"); }
+@font-face { font-family: "OF Roboto Condensed"; font-weight: 700; src: local("Roboto Condensed Bold"), local("RobotoCondensed-Bold"), url("fonts/RobotoCondensed-Bold.ttf"); }
+
+@font-face { font-family: "OF Noto Serif"; font-weight: 400; src: local("Noto Serif"), local("NotoSerif"), url("fonts/NotoSerif-Regular.ttf"); }
+@font-face { font-family: "OF Noto Serif"; font-weight: 700; src: local("Noto Serif Bold"), local("NotoSerif-Bold"), url("fonts/NotoSerif-Bold.ttf"); }
+
+@font-face { font-family: "OF Dancing Script"; font-weight: 400; src: local("Dancing Script"), local("DancingScript"), url("fonts/DancingScript-Regular.ttf"); }
+@font-face { font-family: "OF Dancing Script"; font-weight: 700; src: local("Dancing Script Bold"), local("DancingScript-Bold"), url("fonts/DancingScript-Bold.ttf"); }
+
+@font-face { font-family: "OF Coming Soon"; font-weight: 400; src: local("Coming Soon"), local("ComingSoon"), url("fonts/ComingSoon.ttf"); }
+
+@font-face { font-family: "OF Cutive Mono"; font-weight: 400; src: local("Cutive Mono"), local("CutiveMono-Regular"), url("fonts/CutiveMono.ttf"); }

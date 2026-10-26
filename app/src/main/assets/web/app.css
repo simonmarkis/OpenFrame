@@ -1,0 +1,217 @@
+/* Page shell and layout renderer (SPEC §14). Widget boxes are percentages of the page. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: #eee;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+/* On the frame the shell paints black behind the page, and videos play below it (SPEC §6). */
+html.frame, html.frame body { background: transparent; }
+
+[hidden] { display: none !important; }
+
+#page { position: fixed; inset: 0; }
+
+.w { position: absolute; }
+.w-grid > .w-inner { position: absolute; inset: 0; }
+
+/* Anchored overlays: a box (whole page or the widget they sit over) with the content in a corner. */
+.w-anchor { display: flex; pointer-events: none; padding: 20px 28px; }
+.w-anchor > .w-inner { position: relative; pointer-events: auto; }
+.corner-top-left { align-items: flex-start; justify-content: flex-start; }
+.corner-top-right { align-items: flex-start; justify-content: flex-end; }
+.corner-bottom-left { align-items: flex-end; justify-content: flex-start; }
+.corner-bottom-right { align-items: flex-end; justify-content: flex-end; }
+.w-anchor.lift { padding-bottom: 100px; } /* clears the calendar icon below */
+.w-anchor.beside { padding-left: 100px; } /* right of the calendar icon (status icons) */
+/* The same in the top and right corners (custom pages, SPEC §14): clear the icons from the other side. */
+.w-anchor.lift.corner-top-left, .w-anchor.lift.corner-top-right { padding-bottom: 20px; padding-top: 100px; }
+.w-anchor.beside.corner-top-right, .w-anchor.beside.corner-bottom-right { padding-left: 28px; padding-right: 100px; }
+
+/* calendar_icon (Pictures-only preset) */
+.cal-icon {
+  display: block;
+  width: 60px;
+  height: 60px;
+  padding: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.38);
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-icon:active { background: rgba(0, 0, 0, 0.6); }
+.cal-icon svg { width: 32px; height: 32px; fill: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)); }
+
+/* Quick menu (tap the photo): a white card near the top, like Frameo's. */
+.qm-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: center; align-items: flex-start; padding-top: 7vh; }
+.qm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.qm-top { display: flex; align-items: center; gap: 8px; }
+.qm-spacer { flex: 1; }
+.qm-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  height: 52px;
+  padding: 0 14px 0 10px;
+  border: 0;
+  border-radius: 26px;
+  background: transparent;
+  color: #3c4043;
+  font: bold 18px sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.qm-chip:active { background: #f1f3f4; }
+.qm-chip svg { flex: none; width: 30px; height: 30px; fill: #5f6368; }
+.qm-chip span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.qm-items { display: flex; gap: 12px; }
+.qm-arrow {
+  position: fixed;
+  width: 76px;
+  height: 76px;
+  padding: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  -webkit-tap-highlight-color: transparent;
+}
+.qm-arrow:active { background: rgba(0, 0, 0, 0.65); }
+.qm-arrow svg { width: 56px; height: 56px; fill: #fff; }
+
+/* Event reminder (SPEC §11): a centre card over a dimmed screen, above everything; only Dismiss closes it. */
+.rm-veil { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.6); }
+.rm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(620px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: 26px 30px 22px;
+  border-radius: 24px;
+  background: #fff;
+  color: #202124;
+  font-family: var(--of-cal-font, sans-serif);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+}
+.rm-list { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; min-height: 0; }
+.rm-event { padding: 2px 0 2px 18px; border-left: 8px solid var(--rm-color); }
+.rm-when { font-size: 20px; font-weight: bold; color: #1a73e8; }
+.rm-title { margin-top: 2px; font-size: 32px; font-weight: bold; line-height: 1.2; overflow-wrap: anywhere; }
+.rm-time { margin-top: 4px; font-size: 20px; color: #3c4043; }
+.rm-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+.rm-left { font-size: 20px; }
+.rm-dismiss {
+  height: 64px;
+  min-width: 180px;
+  padding: 0 32px;
+  border: 0;
+  border-radius: 32px;
+  background: #1a73e8;
+  color: #fff;
+  font: 500 24px sans-serif;
+}
+.rm-dismiss:active { filter: brightness(0.9); }
+
+/* Centered notice (going to sleep, quick menu errors); a tap closes it. */
+.notice-veil { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.55); }
+.notice-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 560px;
+  margin: 0 24px;
+  padding: 26px 30px;
+  border-radius: 22px;
+  background: #fff;
+  color: #3c4043;
+  font: 19px/1.4 sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.notice-box b { font-size: 24px; color: #202124; }
+/* Power question (SPEC §18): three large buttons, Shut down the strongest. */
+.power-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+.power-btn {
+  height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 28px;
+  background: #f1f3f4;
+  color: #1a73e8;
+  font: 500 20px sans-serif;
+}
+.power-btn.cancel { background: transparent; color: #5f6368; }
+.power-btn.shutdown { background: #d93025; color: #fff; }
+.power-btn:active { filter: brightness(0.92); }
+.qm-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 132px;
+  padding: 16px 8px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font: bold 19px sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.qm-item:active { background: #e2e5e7; }
+.qm-item svg { width: 44px; height: 44px; fill: #1a73e8; }
+
+/* Quick menu: Pages row (more than one page) */
+.qm-pages { display: flex; flex-wrap: wrap; gap: 8px; max-width: 560px; padding-top: 4px; border-top: 1px solid rgba(0, 0, 0, 0.1); }
+.qm-page {
+  height: 48px;
+  max-width: 220px;
+  padding: 0 18px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 24px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font: bold 18px sans-serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  -webkit-tap-highlight-color: transparent;
+}
+.qm-page.on { background: #1a73e8; color: #fff; }
+
+/* Page dots (more than one page): bottom center, above the widgets, under menus and the calendar. */
+.page-dots {
+  position: fixed;
+  left: 50%;
+  bottom: 6px;
+  z-index: 30;
+  display: flex;
+  padding: 0 6px;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.28);
+  transform: translateX(-50%);
+}
+.page-dot { width: 40px; height: 40px; padding: 0; border: 0; background: none; -webkit-tap-highlight-color: transparent; }
+.page-dot span { display: block; width: 12px; height: 12px; margin: auto; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 3px rgba(0, 0, 0, 0.5); }
+.page-dot.on span { background: #fff; }
+
+/* Full-screen calendar opened over the page (calendar icon, day panel's full-screen button). */
+.cal-view { position: fixed; inset: 0; z-index: 50; background: #fff; }
+.cal-view-host { position: absolute; inset: 0; }
+
+/* Settings over the page on the frame (SPEC §16): above popups and notices, below reminders (80). The photo
+   shows through until Settings paints. */
+.settings-frame { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 70; border: 0; background: transparent; }
+.settings-frame.loading { visibility: hidden; }
