@@ -658,6 +658,29 @@ class MediaDb(context: Context) : SQLiteOpenHelper(context, "media.db", null, VE
         return out
     }
 
+    /** When each remembered volume was last connected (epoch ms). */
+    fun volumeLastSeen(): Map<String, Long> {
+        val out = HashMap<String, Long>()
+        readableDatabase.rawQuery("SELECT id, last_seen FROM volumes", null).use { c ->
+            while (c.moveToNext()) out[c.getString(0)] = c.getLong(1)
+        }
+        return out
+    }
+
+    /**
+     * Forgets a volume (Settings → Unplugged drives → Forget, user 2026-10-27): its items, their place lookups,
+     * and the volume itself. The files on the drive are not touched. Returns the removed item ids, for their caches.
+     */
+    fun forgetVolume(volume: String): List<Long> = inTransaction {
+        val db = writableDatabase
+        val ids = ArrayList<Long>()
+        db.rawQuery("SELECT id FROM media WHERE volume = ?", arrayOf(volume)).use { c -> while (c.moveToNext()) ids += c.getLong(0) }
+        db.execSQL("DELETE FROM place_lookups WHERE path IN (SELECT path FROM media WHERE volume = ?)", arrayOf<Any>(volume))
+        db.execSQL("DELETE FROM media WHERE volume = ?", arrayOf<Any>(volume))
+        db.execSQL("DELETE FROM volumes WHERE id = ?", arrayOf<Any>(volume))
+        ids
+    }
+
     private fun Cursor.toItem(): Item {
         fun str(n: String) = getColumnIndexOrThrow(n).let { if (isNull(it)) null else getString(it) }
         fun int(n: String) = getColumnIndexOrThrow(n).let { if (isNull(it)) null else getInt(it) }

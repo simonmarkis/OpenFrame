@@ -3,7 +3,7 @@
 
 import {
   PALETTE, BACKGROUND_PALETTE, WEEKDAYS, SLIDE_INTERVALS, INACTIVITY_OPTIONS, SYNC_OPTIONS,
-  TRANSITION_OPTIONS, sectionNames, formatDuration, withCurrent, agoText, feedStatusText, formatBytes,
+  TRANSITION_OPTIONS, sectionNames, formatDuration, shortDuration, withCurrent, agoText, feedStatusText, formatBytes,
   hslToHex, hexToHsl, isHexColor, placeLabel, placeDetail, TEXT_PALETTE,
   WOKEN_OPTIONS, MAX_SCHEDULES, DEFAULT_SCHEDULE, formatHm, toHm, daysSummary, dayTimeText, clipLength,
 } from './lib/settings-core.js';
@@ -51,31 +51,84 @@ const ICONS = {
   more: 'M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
   help: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z',
   caption: 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z',
+  videos: 'M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z',
+  library: 'M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z',
+  phone: 'M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z',
+  search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
 };
 const svg = (name, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[name]}"/></svg>`;
 
-// Five sections (user decision 2026-10-16, SPEC §16): related settings together, rarely used ones under More.
+/*
+ * Laid out like Apple's Settings (user request 2026-10-27, SPEC §16): one short page per topic in four groups,
+ * a coloured icon each, the current value beside the name, rarely used settings on pages of their own (no folds),
+ * and a search box. `group`: the list group (1 photos, 2 calendar and sound, 3 the screen, 4 the frame).
+ * `icon`/`color`: the square in the list. `value`: shown beside the name. `find`: search terms, "Row title|more words".
+ */
 const SECTIONS = [
-  { id: 'photos', label: 'Photos and videos', render: renderPhotos },
-  { id: 'calendars', label: 'Calendar', render: renderCalendars },
-  { id: 'look', label: 'Layout and appearance', render: renderLook },
-  { id: 'display', label: 'Sleep, brightness and sound', render: renderDisplayAndSound },
-  // "More" is gone (user 2026-10-19, V1.0.0 item 5): its pages are sections again, Help last.
-  { id: 'warnings', label: 'Warnings', render: renderWarnings },
-  { id: 'backup', label: 'Backup and restore', render: renderBackup },
-  { id: 'system', label: 'System', render: renderSystem },
-  { id: 'help', label: 'Help', render: renderHelp },
-  // Sub-pages (not in the section list; their own back link unless ownBack).
-  { id: 'library', label: 'Library', render: renderLibrary, parent: 'photos', ownBack: true },
-  { id: 'trash', label: 'Trash', render: renderTrash, parent: 'photos', ownBack: true },
-  { id: 'caption', label: 'Photo caption', render: renderCaption, parent: 'photos', ownBack: true },
-  { id: 'places', label: 'Places', render: renderPlaces, parent: 'photos', ownBack: true },
-  { id: 'layout', label: 'Layout', render: renderLayout, parent: 'look' },
-  { id: 'clock', label: 'Clock and weather', render: renderClock, parent: 'look' },
-  { id: 'appearance', label: 'Text style', render: renderAppearance, parent: 'look' },
+  { id: 'slideshow', label: 'Slideshow', render: renderSlideshow, group: 1, icon: 'photos', color: '#ff9500',
+    value: () => shortDuration(state.config.slideshow.intervalSec),
+    find: ['Timer|show each photo for interval seconds', 'Order|shuffle date taken added', 'Reverse order|newest oldest',
+      'Transition|fade', 'Fill frame|fit crop zoom', 'Background|blur black color'] },
+  { id: 'videos', label: 'Videos', render: renderVideos, group: 1, icon: 'videos', color: '#5856d6',
+    value: () => (state.config.video.include ? 'On' : 'Off'),
+    find: ['Show videos|movie', 'Autoplay', 'Playback|loop play once continue', 'Start with sound|mute', 'Auto-mute after 10 minutes', 'Volume|sound'] },
+  { id: 'caption', label: 'Photo caption', render: renderCaption, group: 1, icon: 'caption', color: '#af52de',
+    value: () => { const c = state.config.caption; return c.showComment || c.showLocation || c.showDate ? 'On' : 'Off'; },
+    find: ['Comment', 'Location|place gps where', 'Detailed location', 'Date taken', 'Places|home private', 'Lines', 'Corner', 'Text size', 'Background|darker'] },
+  { id: 'library', label: 'Library', render: renderLibraryHome, group: 1, icon: 'library', color: '#34c759',
+    find: ['Photos and videos|library delete hide comment', 'Trash|deleted restore', 'Unplugged drives|forget usb sd',
+      'Scan for new photos now|rescan', 'Show photos from SD cards and USB drives|usb sd card drive removable', 'Folder on the drive'] },
+  { id: 'upload', label: 'Add from your phone', render: renderUpload, group: 1, icon: 'phone', color: '#007aff',
+    find: ['Upload page|send add photos', 'Open the upload page|send add photos', 'iPhone Shortcut|share upload key'] },
+  { id: 'calendars', label: 'Calendars', render: renderCalendars, group: 2, icon: 'calendars', color: '#ff3b30',
+    value: () => (state.cal ? String(state.cal.calendars.length) : ''),
+    find: ['Add calendar|ical google link', 'Calendar view|day week month', 'First day of week|sunday monday',
+      'Start calendar on current day|today', 'Fade past events', 'Show week numbers', 'Show time left on the event happening now|now badge',
+      'Check for changes every|sync refresh', 'Sync now|refresh update'] },
+  { id: 'sound', label: 'Sound and reminders', render: renderSound, group: 2, icon: 'sound', color: '#ff2d55',
+    find: ['Volume|speaker loud', 'Click sounds|keyboard', 'Chime|reminder sound bell', 'Play|repeat', 'Reminders volume|alarm', 'Play on the frame|test'] },
+  { id: 'layout', label: 'Layout', render: renderLayout, group: 3, icon: 'layout', color: '#30b0c7',
+    value: () => { const c = layoutChoice(state.config.layout); return c === 'custom' ? 'Custom' : PRESET_NAMES[c]; },
+    find: ['Customize|edit layout editor', 'Start from blank', 'Calendar in landscape|hybrid left right', 'Calendar in portrait|top bottom',
+      'Return to your layout after|inactivity timeout touch', 'More pages'] },
+  { id: 'clock', label: 'Clock and weather', render: renderClock, group: 3, icon: 'clock', color: '#5ac8fa',
+    find: ['Clock|time', 'Date', 'Weather', 'Corner', 'Size', 'Font, color and shadow', 'Use 24-hour format|12', 'Show AM/PM',
+      'Date format', 'Time zone', 'Weather location|city', 'Temperature unit|fahrenheit celsius', 'What the weather shows'] },
+  { id: 'dark', label: 'Dark mode', render: renderDark, group: 3, icon: 'moon', color: '#48484a',
+    value: () => ({ light: 'Light', dark: 'Dark', auto: 'Automatic' })[state.config.theme.mode],
+    find: ['Theme|light dark automatic night', 'Dark when|sunset sunrise', 'Dark from', 'Light from', 'Calendar and clock panel'] },
+  { id: 'appearance', label: 'Text style', render: renderAppearance, group: 3, icon: 'appearance', color: '#a2845e',
+    value: () => fontLabel(state.config.text.font),
+    find: ['Font|typeface', 'Bold', 'Color|text colour', 'Shadow', 'Outline', 'Opacity|transparent', 'Photo caption', 'Calendar|text size'] },
+  { id: 'display', label: 'Brightness and sleep', render: renderDisplay, group: 3, icon: 'display', color: '#007aff',
+    value: () => (state.config.display.brightness != null ? `${state.config.display.brightness}%` : ''),
+    find: ['Brightness|screen dim', 'Add a sleep schedule|night bedtime', 'Sleep now|off', 'Sleep again after|woken', 'Sleep set-up'] },
+  { id: 'warnings', label: 'Warnings', render: renderWarnings, group: 4, icon: 'warnings', color: '#ff9500',
+    value: () => (state.warnCount == null ? '' : state.warnCount ? String(state.warnCount) : 'None'),
+    find: ['Right now|problem error'] },
+  { id: 'backup', label: 'Backup and restore', render: renderBackup, group: 4, icon: 'backup', color: '#8e8e93',
+    find: ['Snapshots|undo restore history', 'Export settings|download file', 'Import settings|load'] },
+  { id: 'system', label: 'System', render: renderSystem, group: 4, icon: 'system', color: '#8e8e93',
+    find: ['PIN for phones and computers|password web access', 'OpenFrame version|update', 'Wi-Fi|network internet', 'Wi-Fi settings', 'IP address',
+      'USB debugging|adb developer', 'Free storage|space memory', 'Restart the display|reload', 'Frame set-up|home app', 'About|license'] },
+  { id: 'help', label: 'Help', render: renderHelp, group: 4, icon: 'help', color: '#007aff',
+    find: ['Waking and sleeping|wake swipe', 'Turning it off and on|shut down restart power', 'Adding photos and videos',
+      'The photo on screen|swipe menu', 'Calendar and reminders'] },
+  // Pages opened from a page (not in the list; their own back link unless ownBack).
+  { id: 'browse', label: 'Photos and videos', render: renderLibrary, parent: 'library', ownBack: true },
+  { id: 'trash', label: 'Trash', render: renderTrash, parent: 'library', ownBack: true },
+  { id: 'drives', label: 'Unplugged drives', render: renderDrives, parent: 'library', ownBack: true },
+  { id: 'places', label: 'Places', render: renderPlaces, parent: 'caption', ownBack: true,
+    find: ['Home|your places private', 'Place names|openstreetmap lookup', 'Look up missing names', 'Look up all again',
+      'Places left out|ignore town', 'Distance|miles'] },
+  { id: 'pages', label: 'More pages', render: renderPages, parent: 'layout', find: ['Add a page'] },
+  { id: 'weather', label: 'What the weather shows', render: renderWeatherShows, parent: 'clock',
+    find: ['Layout|one line stacked', 'Icon', 'Current temperature', 'High and low', 'Condition|cloudy', 'Feels like',
+      'Chance of rain|precipitation', 'Next days|forecast', 'Icons|color'] },
+  { id: 'sleep-setup', label: 'Sleep set-up', render: renderSleepSetup, parent: 'display', find: ['Turn off sleep|device admin permission'] },
 ];
 /** Old section links (bookmarks, warnings, older pages) and where they lead now. */
-const SECTION_ALIASES = { sound: 'display', more: 'warnings' };
+const SECTION_ALIASES = { photos: 'slideshow', look: 'dark', more: 'warnings' };
 const sectionId = (id) => (id && SECTION_ALIASES[id]) || id;
 
 const state = {
@@ -206,6 +259,7 @@ async function pollConfig() {
 function sync() {
   if (state.config) applyTheme(state.config, weather.value); // dark mode follows the setting at once
   syncers.forEach((fn) => fn());
+  if (state.config) navSyncers.forEach((fn) => fn());
 }
 
 // Coalesces slider drags into one request per ~300 ms.
@@ -287,23 +341,33 @@ function segRow(title, sub, options, get, set) {
 const cfgSeg = (title, sub, path, options) =>
   segRow(title, sub, options, () => getPath(state.config, path), (v) => save(patchFor(path, v)));
 
-/** Row showing the current choice; tapping opens a list. options: [{ value, label, detail? }] or a function. */
-function pickRow(title, options, get, set, sheetTitle = title) {
-  const labelOf = () => {
-    const o = call(options).find((x) => x.value === get());
-    return o ? o.label : String(get());
-  };
-  return row({
-    title,
-    sub: labelOf,
-    cls: 'tappable',
-    right: el('span', '', svg('chevron', 'st-row-icon')),
-    onTap: () => choiceSheet(sheetTitle, call(options), get(), set),
-  });
+/** A row that opens something, with its current value beside the chevron ("Order   Shuffle ›"), like Apple's. */
+function linkRow(title, value, onTap, sub, lead) {
+  const end = el('span', 'st-row-end');
+  const v = el('span', 'st-value');
+  end.append(v);
+  end.insertAdjacentHTML('beforeend', svg('chevron', 'st-row-icon'));
+  const r = row({ title, sub, right: end, onTap, cls: 'tappable', lead });
+  const update = () => { const s = call(value); v.textContent = s == null ? '' : s; v.hidden = !s; };
+  update();
+  syncers.push(update);
+  return r;
 }
 
-const cfgPick = (title, path, options, sheetTitle) =>
-  pickRow(title, options, () => getPath(state.config, path), (v) => save(patchFor(path, v)), sheetTitle);
+/**
+ * Row showing the current choice; tapping opens a list. options: [{ value, label, short?, detail? }] or a function;
+ * `short` is what the row shows when the label is long.
+ */
+function pickRow(title, options, get, set, sheetTitle = title, sub = null) {
+  const labelOf = () => {
+    const o = call(options).find((x) => x.value === get());
+    return o ? (o.short || o.label) : String(get());
+  };
+  return linkRow(title, labelOf, () => choiceSheet(sheetTitle, call(options), get(), set), sub);
+}
+
+const cfgPick = (title, path, options, sheetTitle, sub) =>
+  pickRow(title, options, () => getPath(state.config, path), (v) => save(patchFor(path, v)), sheetTitle, sub);
 
 function sliderRow(title, sub, { min, max, step, format }, get, set) {
   const wrap = el('div', 'st-slider');
@@ -321,41 +385,6 @@ function sliderRow(title, sub, { min, max, step, format }, get, set) {
   update();
   syncers.push(update);
   return r;
-}
-
-const openFolds = new Set(); // folds opened on this page (they stay open while it's shown)
-/** Folds with their own wording (closed, open). */
-const FOLD_LABELS = { pages: ['More pages', 'Hide pages'] };
-
-/**
- * Rarely used rows or groups folded under "More options" (user decision 2026-10-16). Returns the toggle
- * row followed by the items; the items hide while it's closed.
- */
-function more(key, ...items) {
-  const list = items.flat().filter(Boolean);
-  const k = `${state.section}:${key}`;
-  const toggle = el('button', 'st-row tappable st-more');
-  toggle.type = 'button';
-  const label = text('div', 'st-row-title', '');
-  const t = el('div', 'st-row-text');
-  t.append(label);
-  toggle.append(t, el('span', 'st-more-icon', svg('chevron', 'st-row-icon')));
-  const show = () => {
-    const open = openFolds.has(k);
-    label.textContent = (FOLD_LABELS[key] || ['More options', 'Fewer options'])[open ? 1 : 0];
-    toggle.classList.toggle('open', open);
-    toggle.setAttribute('aria-expanded', String(open));
-    list.forEach((x) => { x.classList.toggle('st-folded', !open); });
-  };
-  toggle.addEventListener('click', () => { if (openFolds.has(k)) openFolds.delete(k); else openFolds.add(k); show(); });
-  show();
-  return [toggle, ...list];
-}
-
-/** A fold of whole groups: the toggle in a group of its own, then the groups. */
-function moreGroups(key, ...groups) {
-  const [toggle, ...items] = more(key, ...groups);
-  return [group(null, toggle), ...items];
 }
 
 function actionRow(title, sub, onTap, cls = 'accent') {
@@ -531,7 +560,7 @@ function render() {
   if (!s) return;
   if (s.parent && !s.ownBack) {
     const p = SECTIONS.find((x) => x.id === s.parent);
-    pane.append(group(null, backHere(p.id)));
+    pane.append(backHere(p.id));
   }
   const content = s.render();
   (Array.isArray(content) ? content : [content]).filter(Boolean).forEach((c) => pane.append(c));
@@ -544,137 +573,126 @@ function rerender() {
   pane.scrollTop = top;
 }
 
-// Photos and slideshow
+// Slideshow, Videos, Library, Add from your phone (the Photos and videos section until 2026-10-27)
 
-function renderPhotos() {
+function renderSlideshow() {
   const ss = () => state.config.slideshow;
-  const out = [];
-  out.push(group('Slideshow',
-    cfgPick('Timer', 'slideshow.intervalSec',
-      () => withCurrent(SLIDE_INTERVALS, ss().intervalSec).map((v) => ({ value: v, label: formatDuration(v) })),
-      'Show each photo for'),
-    cfgSeg('Order', null, 'slideshow.order', [
-      { value: 'shuffle', label: 'Shuffle' }, { value: 'date_taken', label: 'Date taken' }, { value: 'date_added', label: 'Date added' },
-    ]),
-    cfgToggle('Reverse order', () => {
-      if (ss().order === 'shuffle') return 'No effect while shuffling';
-      return ss().reverse ? 'Newest photos first' : 'Oldest photos first';
-    }, 'slideshow.reverse'),
-    toggleRow('Fill frame',
-      () => (ss().fit === 'fill' ? 'Photos fill the screen; edges are cropped, faces kept in view' : 'Whole photo shown'),
-      () => ss().fit === 'fill', (v) => save({ slideshow: { fit: v ? 'fill' : 'fit' } })),
-    segRow('Background', 'Around photos that don\'t fill the screen', [
-      { value: 'blur', label: 'Blur' }, { value: 'black', label: 'Black' }, { value: 'color', label: 'Color' },
-    ], () => ss().background, (v) => save({ slideshow: { background: v } }).then(rerender)),
-    ss().background === 'color' && row({
-      title: 'Background color',
-      sub: () => ss().backgroundColor,
-      cls: 'tappable',
-      lead: (() => { const d = el('span', 'st-dot'); syncers.push(() => { d.style.background = ss().backgroundColor; }); return d; })(),
-      onTap: () => {
-        const picker = colorPicker(BACKGROUND_PALETTE, ss().backgroundColor);
-        sheet({
-          title: 'Background color',
-          body: picker.element,
-          actions: ['spacer', { label: 'Cancel' }, { label: 'Save', kind: 'primary', onClick: (s) => { s.close(); save({ slideshow: { backgroundColor: picker.value() } }); } }],
-        });
-      },
-    }),
-    cfgPick('Transition', 'slideshow.transitionMs',
-      () => withCurrent(TRANSITION_OPTIONS, ss().transitionMs).map((v) => ({ value: v, label: v === 0 ? 'Off (instant)' : `Fade, ${v / 1000} s` }))),
-    row({
-      title: 'Photo caption',
-      sub: () => {
-        const c = state.config.caption;
-        const parts = [c.showComment && 'comment', c.showLocation && 'location', c.showDate && 'date'].filter(Boolean);
-        return parts.length ? `Shows the ${parts.join(', ')} on the photo` : 'Off';
-      },
-      cls: 'tappable',
-      right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => go('caption'),
-    }),
-  ));
-
-  // Videos (SPEC §6): Frameo's options; the volume itself is the main one in Sound.
-  const vid = () => state.config.video;
-  out.push(group('Videos',
-    cfgToggle('Show videos', () => (vid().include ? 'Videos play in the slideshow' : 'Only photos are shown'), 'video.include'),
-    cfgToggle('Autoplay', () => (vid().autoplay ? 'Videos start on their own' : 'The first frame with ▶; tap it to play'), 'video.autoplay'),
-    cfgPick('Playback', 'video.playback', [
-      { value: 'continue', label: 'Play once and continue', detail: 'The next photo comes a second after the video ends, whatever the timer' },
-      { value: 'once', label: 'Play once and wait', detail: 'The last frame stays until the timer ends' },
-      { value: 'loop', label: 'Loop', detail: 'Plays again until the timer ends' },
-    ]),
-    cfgToggle('Start with sound', () => (vid().muted
-      ? 'Videos play without sound; tap a video, then Sound'
-      : 'At the volume set in Sound'), 'video.muted', true),
-    cfgToggle('Auto-mute after 10 minutes', 'Sound goes off when nobody has touched the frame for 10 minutes', 'video.autoMute'),
-    row({
-      title: 'Volume',
-      sub: () => (state.config.sound.volume == null ? 'Set in Sound' : `${state.config.sound.volume}%`),
-      cls: 'tappable',
-      right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => go('display'),
-    }),
-    note('A video is never cut off: one longer than the timer plays to the end. The frame plays H.264 and HEVC up to 1080p; the iPhone Shortcut converts other videos.'),
-  ));
-
-  out.push(uploadGroup());
-
-  const drives = group('SD card and USB drives',
-    cfgToggle('Show photos from SD cards and USB drives', null, 'media.removable.enabled'),
-    row({
-      title: 'Folder on the drive',
-      sub: () => state.config.media.removable.subfolder || 'Whole drive',
-      cls: 'tappable',
-      onTap: () => {
-        const i = input('text', state.config.media.removable.subfolder, { placeholder: 'Photos/Frame', spellcheck: false });
-        const err = errorBox();
-        sheet({
-          title: 'Folder on the drive',
-          body: [text('p', '', 'Only this folder (and the folders inside it) is shown. Leave empty for the whole drive.'), field('Folder', i), err],
-          actions: ['spacer', { label: 'Cancel' }, {
-            label: 'Save', kind: 'primary',
-            onClick: async (s) => {
-              try {
-                state.config = await api('/api/config', { method: 'PATCH', json: { media: { removable: { subfolder: i.value.trim() } } } });
-                s.close(); flash('Saved'); sync();
-              } catch (e) { err.show(e.message); }
-            },
-          }],
-        });
-        setTimeout(() => i.focus(), 50);
-      },
-    }),
-    note('Drives must be FAT32 or NTFS (exFAT isn\'t supported by the frame). A USB drive works only while the PC cable is unplugged.'),
-  );
-
-  const lib = group('Library', text('p', 'st-note', 'Loading…'));
-  out.push(lib, ...moreGroups('drives', drives));
-  loadMedia().then(() => {
-    if (state.section !== 'photos') return;
-    lib.innerHTML = '';
-    lib.append(...libraryRows());
-  });
-  return out;
+  return [
+    group(null,
+      cfgPick('Timer', 'slideshow.intervalSec',
+        () => withCurrent(SLIDE_INTERVALS, ss().intervalSec).map((v) => ({ value: v, label: formatDuration(v) })),
+        'Show each photo for'),
+      cfgSeg('Order', null, 'slideshow.order', [
+        { value: 'shuffle', label: 'Shuffle' }, { value: 'date_taken', label: 'Date taken' }, { value: 'date_added', label: 'Date added' },
+      ]),
+      cfgToggle('Reverse order', () => {
+        if (ss().order === 'shuffle') return 'No effect while shuffling';
+        return ss().reverse ? 'Newest photos first' : 'Oldest photos first';
+      }, 'slideshow.reverse'),
+      cfgPick('Transition', 'slideshow.transitionMs',
+        () => withCurrent(TRANSITION_OPTIONS, ss().transitionMs).map((v) => ({ value: v, label: v === 0 ? 'Off (instant)' : `Fade, ${v / 1000} s` }))),
+    ),
+    group('Fitting',
+      toggleRow('Fill frame',
+        () => (ss().fit === 'fill' ? 'Photos fill the screen; edges are cropped, faces kept in view' : 'Whole photo shown'),
+        () => ss().fit === 'fill', (v) => save({ slideshow: { fit: v ? 'fill' : 'fit' } })),
+      segRow('Background', 'Around photos that don\'t fill the screen', [
+        { value: 'blur', label: 'Blur' }, { value: 'black', label: 'Black' }, { value: 'color', label: 'Color' },
+      ], () => ss().background, (v) => save({ slideshow: { background: v } }).then(rerender)),
+      ss().background === 'color' && row({
+        title: 'Background color',
+        sub: () => ss().backgroundColor,
+        cls: 'tappable',
+        lead: (() => { const d = el('span', 'st-dot'); syncers.push(() => { d.style.background = ss().backgroundColor; }); return d; })(),
+        onTap: () => {
+          const picker = colorPicker(BACKGROUND_PALETTE, ss().backgroundColor);
+          sheet({
+            title: 'Background color',
+            body: picker.element,
+            actions: ['spacer', { label: 'Cancel' }, { label: 'Save', kind: 'primary', onClick: (s) => { s.close(); save({ slideshow: { backgroundColor: picker.value() } }); } }],
+          });
+        },
+      }),
+    ),
+    note('Each photo can be changed on its own: tap it on the frame, then Fit or Fill, or Position.'),
+  ];
 }
 
-/** "Add photos from your phone" (SPEC §17): the upload page and the iPhone Shortcut's key. */
-function uploadGroup() {
-  const ip = () => (state.system && state.system.network.ip) || '<frame address>';
-  const pageUrl = () => `http://${ip()}:8080/upload`;
-  return group('Add photos from your phone',
-    isFrame
-      ? row({ title: 'Upload page', sub: () => `On your phone, open ${pageUrl()} (you'll need the web access PIN)` })
-      : actionRow('Open the upload page', 'Pick photos and videos on this device and send them to the frame', () => { location.href = '/upload'; }),
-    row({
-      title: 'iPhone Shortcut',
-      sub: 'Send photos and videos from the Share button in Photos. Set-up guide and key',
-      cls: 'tappable',
-      right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: shortcutSheet,
+// Videos (SPEC §6): Frameo's options; the volume itself is the main one in Sound and reminders.
+function renderVideos() {
+  const vid = () => state.config.video;
+  return [
+    group(null,
+      cfgToggle('Show videos', () => (vid().include ? 'Videos play in the slideshow' : 'Only photos are shown'), 'video.include'),
+      cfgToggle('Autoplay', () => (vid().autoplay ? 'Videos start on their own' : 'The first frame with ▶; tap it to play'), 'video.autoplay'),
+      cfgPick('Playback', 'video.playback', [
+        { value: 'continue', label: 'Play once and continue', short: 'Once, then next', detail: 'The next photo comes a second after the video ends, whatever the timer' },
+        { value: 'once', label: 'Play once and wait', short: 'Once, then wait', detail: 'The last frame stays until the timer ends' },
+        { value: 'loop', label: 'Loop', detail: 'Plays again until the timer ends' },
+      ]),
+    ),
+    group('Sound',
+      cfgToggle('Start with sound', () => (vid().muted
+        ? 'Videos play without sound; tap a video, then Sound'
+        : 'At the volume set in Sound and reminders'), 'video.muted', true),
+      cfgToggle('Auto-mute after 10 minutes', 'Sound goes off when nobody has touched the frame for 10 minutes', 'video.autoMute'),
+      linkRow('Volume', () => (state.config.sound.volume == null ? '' : `${state.config.sound.volume}%`), () => go('sound')),
+    ),
+    note('A video is never cut off: one longer than the timer plays to the end. The frame plays H.264 and HEVC up to 1080p; the iPhone Shortcut converts other videos.'),
+  ];
+}
+
+/** Library: the photos, the Trash, where photos come from, and SD cards and USB drives. */
+function renderLibraryHome() {
+  const lib = group(null, text('p', 'st-note', 'Loading…'));
+  const drives = group('SD cards and USB drives',
+    cfgToggle('Show photos from SD cards and USB drives', null, 'media.removable.enabled'),
+    linkRow('Folder on the drive', () => state.config.media.removable.subfolder || 'Whole drive', () => {
+      const i = input('text', state.config.media.removable.subfolder, { placeholder: 'Photos/Frame', spellcheck: false });
+      const err = errorBox();
+      sheet({
+        title: 'Folder on the drive',
+        body: [text('p', '', 'Only this folder (and the folders inside it) is shown. Leave empty for the whole drive.'), field('Folder', i), err],
+        actions: ['spacer', { label: 'Cancel' }, {
+          label: 'Save', kind: 'primary',
+          onClick: async (s) => {
+            try {
+              state.config = await api('/api/config', { method: 'PATCH', json: { media: { removable: { subfolder: i.value.trim() } } } });
+              s.close(); flash('Saved'); sync();
+            } catch (e) { err.show(e.message); }
+          },
+        }],
+      });
+      setTimeout(() => i.focus(), 50);
     }),
   );
+  const stored = group(null);
+  stored.hidden = true;
+  loadMedia().then(() => {
+    if (state.section !== 'library') return;
+    const r = libraryRows();
+    lib.innerHTML = '';
+    lib.append(...r.photos);
+    stored.append(...r.storage);
+    stored.hidden = !r.storage.length;
+  });
+  return [lib, stored, drives,
+    note('Drives must be FAT32 or NTFS (exFAT isn\'t supported by the frame). A USB drive works only while the PC cable is unplugged.')];
+}
+
+/** Add from your phone (SPEC §17): the upload page and the iPhone Shortcut's key. */
+function renderUpload() {
+  const ip = () => (state.system && state.system.network.ip) || '<frame address>';
+  const pageUrl = () => `http://${ip()}:8080/upload`;
+  return [
+    group(null,
+      isFrame
+        ? row({ title: 'Upload page', sub: () => `On your phone, open ${pageUrl()} (you'll need the web access PIN)` })
+        : actionRow('Open the upload page', 'Pick photos and videos on this device and send them to the frame', () => { location.href = '/upload'; }),
+      linkRow('iPhone Shortcut', null, shortcutSheet, 'Send photos and videos from the Share button in Photos. Set-up guide and key'),
+    ),
+    note('New photos and videos show up in the slideshow within a few slides.'),
+  ];
 }
 
 function copyText(s) {
@@ -798,30 +816,75 @@ async function loadMedia() {
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
+/** The Library page's rows: { photos: the photos and the Trash, storage: where they are, the scan } (each a group's). */
 function libraryRows() {
   const m = state.media;
-  if (!m || !state.libCounts) return [text('h2', 'st-group-title', 'Library'), note('Couldn\x27t load the library.')];
+  if (!m || !state.libCounts) return { photos: [note('Couldn\x27t load the library.')], storage: [] };
   const c = state.libCounts;
-  const rows = [text('h2', 'st-group-title', 'Library')];
-  const parts = [plural(c.all, 'photo or video', 'photos and videos')];
+  const parts = [];
   if (c.problems) parts.push(`${c.problems} can't be shown`);
   if (c.hidden) parts.push(`${c.hidden} hidden`);
-  const chevron = () => el('span', '', svg('chevron', 'st-row-icon'));
-  rows.push(row({ title: m.indexing ? 'Library (scanning for photos…)' : 'Library',     sub: `${parts.join(' · ')}. Comments, hide, delete.`,
-    cls: 'tappable', right: chevron(), onTap: () => go('library') }));
-  rows.push(row({ title: 'Trash',
-    sub: state.trashCount ? `${plural(state.trashCount, 'item', 'items')} · deleted for good after 30 days` : 'Empty',
-    cls: 'tappable', right: chevron(), onTap: () => go('trash') }));
-  for (const v of m.volumes) {
-    rows.push(infoRow(v.label || v.id, v.mounted ? plural(v.items, 'item', 'items') : `Not connected · ${plural(v.items, 'item', 'items')} remembered`));
+  const photos = [
+    linkRow(m.indexing ? 'Photos and videos (scanning…)' : 'Photos and videos', String(c.all), () => go('browse'),
+      parts.length ? parts.join(' · ') : 'Comments, hide, delete'),
+    linkRow('Trash', state.trashCount ? String(state.trashCount) : 'Empty', () => go('trash'),
+      state.trashCount ? 'Deleted for good after 30 days' : null),
+  ];
+  // Where photos come from: this frame and any drive plugged in now; unplugged drives the frame remembers are on
+  // their own page, where they can be forgotten (user 2026-10-27).
+  const storage = [text('h2', 'st-group-title', 'Stored on')];
+  for (const v of m.volumes.filter((x) => x.mounted)) {
+    storage.push(row({ title: v.id === 'internal' ? 'This frame' : driveName(v),
+      sub: v.id === 'internal' ? null : 'Plugged in', right: text('span', 'st-value', String(v.items)) }));
   }
-  rows.push(actionRow('Scan for new photos now', `Last scan ${agoText(m.lastScanAt)}`, async () => {
+  const away = m.volumes.filter((x) => !x.mounted);
+  if (away.length) storage.push(linkRow('Unplugged drives', String(away.length), () => go('drives'), 'Remembered by the frame'));
+  storage.push(actionRow('Scan for new photos now', `Last scan ${agoText(m.lastScanAt)}`, async () => {
     try {
       await api('/api/media/rescan', { method: 'POST' });
       toast('Scanning. New photos appear in the slideshow within a few slides.');
     } catch (e) { toast(e.message, true); }
   }));
-  return rows;
+  return { photos, storage };
+}
+
+/** A drive's name for people: "USB drive: KINGSTON", "SD card", or just "USB drive" when it has no name of its own. */
+function driveName(v) {
+  const l = (v.label || '').trim();
+  if (/\bsd\b/i.test(l) && /card/i.test(l)) return 'SD card';
+  if (!l || /^usb ?drive$/i.test(l) || /^usb (storage|disk)$/i.test(l)) return 'USB drive';
+  return `USB drive: ${l}`;
+}
+
+/** Photos → Unplugged drives: drives the frame remembers that aren't plugged in, each with Forget. */
+function renderDrives() {
+  const list = el('div');
+  const draw = () => {
+    if (state.section !== 'drives') return;
+    list.innerHTML = '';
+    const away = state.media ? state.media.volumes.filter((x) => !x.mounted) : [];
+    if (!away.length) { list.append(note('No unplugged drives: the frame remembers none.')); return; }
+    for (const v of away) {
+      const forget = text('button', 'st-btn danger', 'Forget');
+      forget.type = 'button';
+      forget.addEventListener('click', () => confirmSheet(`Forget ${driveName(v)}?`,
+        `The frame forgets this drive and its ${plural(v.items, 'photo or video', 'photos and videos')}, with their comments, hidden marks, and zoom. The files on the drive stay as they are. Plugged in again, it is read as a new drive.`,
+        'Forget', async () => {
+          try {
+            await api(`/api/volumes/${encodeURIComponent(v.id)}`, { method: 'DELETE' });
+            toast(`${driveName(v)} forgotten`);
+            await loadMedia();
+            draw();
+          } catch (e) { toast(e.message, true); }
+        }, 'danger'));
+      list.append(row({ title: driveName(v),
+        sub: `${plural(v.items, 'photo or video', 'photos and videos')} remembered${v.lastSeen ? ` · last plugged in ${agoText(v.lastSeen)}` : ''}`,
+        right: forget }));
+    }
+  };
+  loadMedia().then(draw);
+  return [backHere('library'), group(null, list),
+    note('Drives the frame remembers while they\x27re unplugged, so their photos keep their comments and settings. Forget one you won\x27t plug in again.')];
 }
 
 // Library and Trash (sub-pages of Photos): tap a photo to change it (comment, fit, hide, delete;
@@ -961,7 +1024,7 @@ function renderLibrary() {
     segButtons.forEach(({ f, b }) => b.classList.toggle('on', f.value === libFilter));
     try {
       const r = await api(`/api/library?filter=${libFilter}&offset=${items.length}&limit=${LIB_PAGE}`);
-      if (state.section !== 'library') return;
+      if (state.section !== 'browse') return;
       total = r.total;
       segButtons.forEach(({ f, b }) => { b.textContent = `${f.label} (${r.counts[f.value]})`; });
       items = items.concat(r.items);
@@ -1090,7 +1153,7 @@ function renderLibrary() {
   }
 
   load(true);
-  return [group(null, backHere('photos'), tools, status, grid, more), bar.el];
+  return [backHere('library'), group(null, tools, status, grid, more), bar.el];
 }
 
 function renderTrash() {
@@ -1147,7 +1210,7 @@ function renderTrash() {
   }
 
   load();
-  return [group(null, backHere('photos'), status, list, empty), bar.el];
+  return [backHere('library'), group(null, status, list, empty), bar.el];
 }
 
 // Calendars
@@ -1169,14 +1232,15 @@ function renderCalendars() {
       cfgSeg('Calendar view', 'The full-screen calendar opens in this view', 'calendar.defaultView', [
         { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' },
       ]),
-      cfgPick('First day of week', 'calendar.firstDay', WEEKDAYS.map((d, i) => ({ value: i, label: `The week starts on ${d}` }))),
+      cfgPick('First day of week', 'calendar.firstDay', WEEKDAYS.map((d, i) => ({ value: i, label: `The week starts on ${d}`, short: d }))),
       cfgToggle('Start calendar on current day',
         () => (c().startOnToday ? 'Week view starts today' : `Week view starts on ${firstDayName()}`), 'calendar.startOnToday'),
+    ),
+    group('Events',
       cfgToggle('Fade past events', null, 'calendar.fadePast'),
-      ...more('view',
-        cfgToggle('Show week numbers', null, 'calendar.weekNumbers'),
-        cfgToggle('Show time left on the event happening now', 'In the day panel: "Now · 12 min left" instead of "Now"',
-          'calendar.nowTimeLeft')),
+      cfgToggle('Show time left on the event happening now', 'In the day panel: "Now · 12 min left" instead of "Now"',
+        'calendar.nowTimeLeft'),
+      cfgToggle('Show week numbers', null, 'calendar.weekNumbers'),
     ),
     group('Sync',
       cfgPick('Check for changes every', 'calendar.syncIntervalMin',
@@ -1424,7 +1488,7 @@ function renderLayout() {
   const blank = actionRow('Start from blank', 'An empty layout in the editor; yours stays until you save the new one',
     () => confirmSheet('Start from blank?', 'The layout editor opens with nothing on it. Your layout stays as it is until you save there.',
       'Start', () => editLayoutPage(homeId(), true)));
-  const hybridGroup = group('Hybrid',
+  const hybridGroup = group('Hybrid layout',
     cfgSeg('Calendar in landscape', 'Beside the photo', 'layout.hybridCalendar.landscape', [
       { value: 'left', label: 'Left' }, { value: 'right', label: 'Right' },
     ]),
@@ -1433,6 +1497,25 @@ function renderLayout() {
     ]));
   syncers.push(() => { hybridGroup.hidden = layoutChoice(layout()) !== 'hybrid'; });
   hybridGroup.hidden = layoutChoice(layout()) !== 'hybrid';
+  const extra = () => layoutPages(layout()).length - 1;
+  return [
+    group('Your layout', cardsBox, customize, blank),
+    // Hybrid's calendar column (user request 2026-10-16): left or right in landscape, above or below in portrait.
+    hybridGroup,
+    group('Touch',
+      cfgPick('Return to your layout after', 'layout.inactivityReturnSec',
+        () => withCurrent(INACTIVITY_OPTIONS, layout().inactivityReturnSec).map((v) => ({ value: v, label: formatDuration(v) })),
+        'Return after no touch for'),
+    ),
+    note('Applies to other pages, the full-screen calendar, days swiped away from today, this settings page, and Android\'s Wi-Fi screen on the frame.'),
+    // More pages: an extra on a page of its own (e.g. a Home Assistant page someday).
+    group(null, linkRow('More pages', () => (extra() > 0 ? String(extra()) : 'None'), () => go('pages'))),
+  ];
+}
+
+/** Layout → More pages: dots and the Pages row appear on the frame with a second page. */
+function renderPages() {
+  const layout = () => state.config.layout;
   const list = el('div');
   const draw = () => {
     list.innerHTML = '';
@@ -1451,18 +1534,8 @@ function renderLayout() {
   });
   const add = actionRow('Add a page', () => (layoutPages(layout()).length >= MAX_PAGES ? `The frame holds up to ${MAX_PAGES} pages` : null), addPageSheet);
   return [
-    group('Your layout', cardsBox, customize, blank),
-    // Hybrid's calendar column (user request 2026-10-16): left or right in landscape, above or below in portrait.
-    hybridGroup,
-    group('Touch',
-      cfgPick('Return to your layout after', 'layout.inactivityReturnSec',
-        () => withCurrent(INACTIVITY_OPTIONS, layout().inactivityReturnSec).map((v) => ({ value: v, label: formatDuration(v) })),
-        'Return after no touch for'),
-      note('Applies to other pages, the full-screen calendar, days swiped away from today, this settings page, and Android\'s Wi-Fi screen on the frame.'),
-    ),
-    // More pages: a hidden extra (e.g. a Home Assistant page someday); dots and the Pages row appear with a second page.
-    ...moreGroups('pages', group('More pages', list, add,
-      note('Your layout is the home page. Extra pages are switched with the dots at the bottom of the frame or Pages in the menu (tap the photo).'))),
+    group('Pages', list, add),
+    note('Your layout is the home page. Extra pages are switched with the dots at the bottom of the frame or Pages in the menu (tap the photo).'),
   ];
 }
 
@@ -1584,6 +1657,27 @@ function renderDisplay() {
     return 'No sleep schedule is on.';
   });
 
+  return [
+    group(null, brightness),
+    group('Sleep schedule', list, addRow, next,
+      actionRow('Sleep now', 'Until the next wake-up time, or until someone swipes the screen', async () => {
+        try { await api('/api/power/sleep', { method: 'POST' }); toast('Going to sleep'); } catch (e) { toast(e.message, true); }
+      }),
+    ),
+    note('A swipe across the screen wakes the frame; a tap doesn\'t. Someone using the frame at sleep time keeps it on until they stop.'),
+    group('Woken during sleep hours',
+      cfgPick('Sleep again after', 'sleep.wokenTimeoutMin',
+        () => withCurrent(WOKEN_OPTIONS, state.config.sleep.wokenTimeoutMin)
+          .map((v) => ({ value: v, label: `${formatDuration(v * 60)} without a touch`, short: formatDuration(v * 60) }))),
+    ),
+    group(null, linkRow('Sleep set-up', () => (!power() ? '' : power().adminActive ? 'Set up' : 'Not set up'), () => go('sleep-setup'))),
+  ];
+}
+
+/** Brightness and sleep → Sleep set-up: the Android permission that lets OpenFrame turn the screen off. */
+function renderSleepSetup() {
+  loadPower();
+  const power = () => state.power;
   const adminRow = row({
     title: () => (power() && power().adminActive ? 'Sleep is set up' : 'Sleep isn\'t set up'),
     sub: () => (!power() ? 'Loading…' : power().adminActive
@@ -1599,50 +1693,17 @@ function renderDisplay() {
           setTimeout(loadPower, 1000);
         } catch (e) { toast(e.message, true); }
       }, 'danger'), 'danger');
-  syncers.push(() => { removeRow.hidden = !(power() && power().adminActive); });
-  removeRow.hidden = true;
-
-  return [
-    group('Screen', brightness),
-    group('Sleep mode', list, addRow, next,
-      actionRow('Sleep now', 'Until the next wake-up time, or until someone swipes the screen', async () => {
-        try { await api('/api/power/sleep', { method: 'POST' }); toast('Going to sleep'); } catch (e) { toast(e.message, true); }
-      }),
-      note('A swipe across the screen wakes the frame; a tap doesn\'t. Someone using the frame at sleep time keeps it on until they stop.'),
-      ...more('sleep',
-        cfgPick('Woken during sleep hours, sleep again after', 'sleep.wokenTimeoutMin',
-          () => withCurrent(WOKEN_OPTIONS, state.config.sleep.wokenTimeoutMin)
-            .map((v) => ({ value: v, label: `${formatDuration(v * 60)} without a touch` })),
-          'Sleep again after'),
-        adminRow, removeRow),
-    ),
-  ];
+  const removeGroup = group(null, removeRow);
+  syncers.push(() => { removeGroup.hidden = !(power() && power().adminActive); });
+  removeGroup.hidden = true;
+  return [group(null, adminRow), removeGroup];
 }
 
-/** Sleep, brightness and sound (one section since 2026-10-16; old #sound links lead here). */
-function renderDisplayAndSound() {
-  return [...renderDisplay(), ...renderSound()];
+/** Dark mode (SPEC §9): settings, menus, calendar panels, and the full calendar. */
+function renderDark() {
+  return [darkModeGroup(), note('Photos are never changed.')];
 }
 
-/** Layout and appearance: dark mode first, then the layout, clock and weather, and text style pages. */
-function renderLook() {
-  const link = (title, sub, id) => row({ title, sub, cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')), onTap: () => go(id) });
-  const homeName = () => {
-    const l = state.config.layout;
-    const c = layoutChoice(l);
-    const extra = layoutPages(l).length - 1;
-    return `Your layout: ${c === 'custom' ? 'Custom' : PRESET_NAMES[c]}${extra > 0 ? ` (+${extra} more ${extra === 1 ? 'page' : 'pages'})` : ''}`;
-  };
-  return [
-    darkModeGroup(),
-    group('On the screen',
-      link('Layout', homeName, 'layout'),
-      link('Clock and weather', 'What the clock shows, its corner and size, the weather location', 'clock'),
-      link('Text style', 'Font, color, and shadow of the text over photos', 'appearance')),
-  ];
-}
-
-/** More: the rarely used pages. */
 // ---- Help (SPEC §16; text approved by the user 2026-10-19): a short guide for the family ----
 
 /** "9:30 PM" / "21:30" for a schedule's "HH:MM". */
@@ -1672,7 +1733,7 @@ function renderHelp() {
   const at = (path) => (ip ? `http://${ip}:8080${path}` : `the frame\x27s address with ${path} at the end (Settings → System shows it)`);
   return [
     group('Waking and sleeping', list(
-      `${hours} (Settings → Sleep, brightness and sound).`,
+      `${hours} (Settings → Brightness and sleep).`,
       'To wake it, swipe across the screen. A tap doesn\x27t wake it.',
       `Woken at night, it sleeps again after ${sl.wokenTimeoutMin || 5} minutes without a touch.`,
       'To sleep now: tap the photo, then Sleep.')),
@@ -1681,7 +1742,7 @@ function renderHelp() {
       'After Shut down, only the power button on the back of the frame turns it on again.',
       'After a restart the clock shows "--" until it has the time from the internet.')),
     group('Adding photos and videos', list(
-      'iPhone: in Photos, select photos or videos, tap Share, then Send to Frame. (Set it up once: Photos and videos → iPhone Shortcut.)',
+      'iPhone: in Photos, select photos or videos, tap Share, then Send to Frame. (Set it up once: Settings → Add from your phone → iPhone Shortcut.)',
       `Any phone or computer at home: open ${at('/upload')} in the browser.`,
       'New photos show up within a few slides.')),
     group('The photo on screen', list(
@@ -1739,8 +1800,7 @@ function renderSound() {
     setTimeout(() => saveChain.then(() => playChimeOnFrame()).catch(() => {}), 350);
   });
   const chimeLabel = () => (CHIMES.find((c) => c.id === rem().chime) || { label: rem().chime }).label;
-  const chimeRow = row({ title: 'Chime', sub: chimeLabel, cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')),
-    onTap: () => chimeSheet(rem().chime, (id) => save({ sound: { reminders: { chime: id } } })) });
+  const chimeRow = linkRow('Chime', chimeLabel, () => chimeSheet(rem().chime, (id) => save({ sound: { reminders: { chime: id } } })));
   const repeat = cfgPick('Play', 'sound.reminders.repeatSec', [
     { value: 0, label: 'Once' },
     { value: 15, label: 'Every 15 s until dismissed' },
@@ -1752,7 +1812,7 @@ function renderSound() {
     group('Speaker', volume, clicks),
     note('Android has 8 levels for clicks and 16 for videos, so clicks change in bigger steps.'),
     group('Reminders', chimeRow, repeat, rVolume, test),
-    note('Reminders are switched on per calendar in Settings → Calendar. They close by themselves after 2 minutes and stay quiet during sleep hours.'),
+    note('Reminders are switched on per calendar in Settings → Calendars. They close by themselves after 2 minutes and stay quiet during sleep hours.'),
   ];
 }
 
@@ -1765,14 +1825,41 @@ async function playChimeOnFrame(chime) {
 }
 
 let previewAudio = null;
+let previewEl = null;
+const chimeBlobs = new Map(); // chime id -> object URL of its file, loaded when the chime list opens
 
 /**
- * A chime on this device: the frame plays it itself; a phone or computer decodes it with Web Audio
- * (Safari plays no <audio> without byte ranges, which the frame's server doesn't do for these files).
+ * Phones: fetch every chime when the list opens, so a tap can start one at once. iPhones only let a page start
+ * sound inside the tap itself, and the Web Audio way below starts it after a download (it played nothing on the
+ * user's iPhone, 2026-10-27). Object URLs also get around Safari wanting byte ranges for <audio>.
+ */
+function preloadChimes() {
+  if (isFrame) return;
+  for (const c of CHIMES) {
+    if (chimeBlobs.has(c.id)) continue;
+    chimeBlobs.set(c.id, null);
+    fetch(`/sounds/${chimeFile(c.id)}`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(r.status))))
+      .then((b) => chimeBlobs.set(c.id, URL.createObjectURL(b)))
+      .catch(() => chimeBlobs.delete(c.id));
+  }
+}
+
+/**
+ * A chime on this device: the frame plays it itself; a phone or computer plays the preloaded file in an <audio>
+ * element right in the tap (media playback: also with an iPhone's silent switch on), else decodes it with
+ * Web Audio (Safari plays no <audio> from the frame's server without byte ranges, which it doesn't do for these).
  */
 async function previewChime(id) {
   if (isFrame) { playChimeOnFrame(id); return; }
+  const url = chimeBlobs.get(id);
+  if (url) {
+    previewEl = previewEl || new Audio();
+    previewEl.src = url;
+    previewEl.play().catch(() => toast('This device couldn\x27t play the chime. Try "Play on the frame".', true));
+    return;
+  }
   try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback'; // Safari 16.4+: not muted by the silent switch
     // Created and resumed inside the tap, as iOS requires.
     previewAudio = previewAudio || new (window.AudioContext || window.webkitAudioContext)();
     const resumed = previewAudio.state === 'suspended' ? previewAudio.resume() : Promise.resolve();
@@ -1791,6 +1878,7 @@ async function previewChime(id) {
 /** Chime list: tap a name to choose it (and hear it), the play button to hear it again. */
 function chimeSheet(current, set) {
   let chosen = current;
+  preloadChimes();
   const rows = CHIMES.map((c) => {
     const r = el('div', `st-chime${c.id === chosen ? ' on' : ''}`);
     r.dataset.id = c.id;
@@ -2076,13 +2164,8 @@ const CORNERS = [
   { value: 'bottom-left', label: 'Bottom left' }, { value: 'bottom-right', label: 'Bottom right' },
 ];
 
-function renderClock() {
-  const c = () => state.config.clock;
-  const now = new Date();
-  const fmtDate = (opts) => new Intl.DateTimeFormat(undefined, { ...opts, timeZone: tzValid(c().timeZone) }).format(now);
-  const frameZone = () => (state.system ? state.system.timeZone : 'the frame\'s zone');
-  weather.start();
-
+/** A page with the home page's preview beside it (wide screens) or above it (narrow ones). */
+function withPreview(groups, previewOpts) {
   const previewNote = () => (homePage(state.config.layout).preset === 'hybrid'
     ? 'Your home page as the frame shows it. In Hybrid landscape the clock is the panel above the calendar; corner and size apply to the clock over the photo (Pictures only, Hybrid portrait).'
     : 'Your home page as the frame shows it.');
@@ -2094,9 +2177,25 @@ function renderClock() {
   const split = el('div', 'st-split');
   const side = el('div', 'st-split-side');
   const main = el('div', 'st-split-main');
-  side.append(group('Preview', clockPreview(), pNote));
+  side.append(group('Preview', clockPreview(previewOpts), pNote));
   split.append(main, side);
-  [
+  groups.filter(Boolean).forEach((g) => main.append(g));
+  return split;
+}
+
+function renderClock() {
+  const c = () => state.config.clock;
+  const now = new Date();
+  const fmtDate = (opts) => new Intl.DateTimeFormat(undefined, { ...opts, timeZone: tzValid(c().timeZone) }).format(now);
+  const frameZone = () => (state.system ? state.system.timeZone : 'the frame\'s zone');
+  weather.start();
+  const ws = () => c().weatherShow;
+  const shows = () => {
+    const on = [ws().icon && 'icon', ws().current && 'temperature', ws().highLow && 'high and low', ws().condition && 'condition',
+      ws().feelsLike && 'feels like', ws().rain && 'rain', c().forecastDays && `${c().forecastDays} days`].filter(Boolean);
+    return on.length ? on.join(', ').replace(/^./, (x) => x.toUpperCase()) : 'Nothing';
+  };
+  return withPreview([
     group('Show',
       cfgToggle('Clock', null, 'clock.showClock'),
       cfgToggle('Date', null, 'clock.showDate'),
@@ -2108,60 +2207,59 @@ function renderClock() {
         ? 'Hybrid: also the height of the clock panel above the calendar' : null), 'clock.size', [
         { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
       ]),
-      actionRow('Font, color and shadow', 'In Text style (for all text)', () => go('appearance')),
+      linkRow('Font, color and shadow', null, () => go('appearance'), 'In Text style (for all text)'),
     ),
     group('Date and time',
       cfgToggle('Use 24-hour format', null, 'clock.hour12', true),
       cfgToggle('Show AM/PM', () => (state.config.clock.hour12 ? null : 'Only with the 12-hour format'), 'clock.showAmPm'),
-      ...more('time',
-        cfgSeg('Date format', null, 'clock.dateFormat', [
-          { value: 'long', label: fmtDate({ weekday: 'long', month: 'long', day: 'numeric' }) },
-          { value: 'short', label: fmtDate({ weekday: 'short', month: 'short', day: 'numeric' }) },
-        ]),
-        row({
-          title: 'Time zone',
-          sub: () => (c().timeZone ? c().timeZone.replace(/_/g, ' ') : `Same as the frame (${frameZone().replace(/_/g, ' ')})`),
-          cls: 'tappable',
-          right: el('span', '', svg('chevron', 'st-row-icon')),
-          onTap: timeZoneSheet,
-        })),
+      cfgPick('Date format', 'clock.dateFormat', [
+        { value: 'long', label: fmtDate({ weekday: 'long', month: 'long', day: 'numeric' }) },
+        { value: 'short', label: fmtDate({ weekday: 'short', month: 'short', day: 'numeric' }) },
+      ]),
+      linkRow('Time zone', () => (c().timeZone ? c().timeZone.replace(/_/g, ' ') : 'Same as the frame'), timeZoneSheet,
+        () => (c().timeZone ? null : frameZone().replace(/_/g, ' '))),
     ),
     group('Weather',
-      row({
-        title: 'Weather location',
-        sub: () => state.config.weather.place || (state.config.weather.latitude === null ? 'Not set (no weather shown)' : `${state.config.weather.latitude}, ${state.config.weather.longitude}`),
-        cls: 'tappable',
-        right: el('span', '', svg('chevron', 'st-row-icon')),
-        onTap: locationSheet,
-      }),
+      linkRow('Weather location', () => state.config.weather.place || (state.config.weather.latitude === null ? 'Not set' : `${state.config.weather.latitude}, ${state.config.weather.longitude}`),
+        locationSheet),
       cfgSeg('Temperature unit', null, 'weather.units', [
         { value: 'fahrenheit', label: '°F' }, { value: 'celsius', label: '°C' },
       ]),
       weatherStatusRow(),
+      linkRow('What the weather shows', null, () => go('weather'), shows),
     ),
-    group('Weather display',
+  ]);
+}
+
+/** Clock and weather → What the weather shows (the "More options" fold until 2026-10-27). */
+function renderWeatherShows() {
+  const c = () => state.config.clock;
+  weather.start();
+  return withPreview([
+    group(null,
       cfgSeg('Layout', () => (c().weatherLayout === 'line'
         ? 'Date and weather on one line under the time, like Frameo' : 'Time, date, and weather each on their own line'), 'clock.weatherLayout', [
         { value: 'stacked', label: 'Stacked' }, { value: 'line', label: 'One line' },
       ]),
+      cfgSeg('Icons', null, 'clock.iconStyle', [
+        { value: 'color', label: 'In color' }, { value: 'text', label: 'Text color' },
+      ]),
+    ),
+    group('Show',
       cfgToggle('Icon', null, 'clock.weatherShow.icon'),
       cfgToggle('Current temperature', null, 'clock.weatherShow.current'),
       cfgToggle('High and low', 'Today\'s; also shown when there is no current reading', 'clock.weatherShow.highLow'),
-      ...more('weather',
-        cfgToggle('Condition', 'For example "Partly cloudy"', 'clock.weatherShow.condition'),
-        cfgToggle('Feels like', null, 'clock.weatherShow.feelsLike'),
-        cfgToggle('Chance of rain', 'Today\'s highest', 'clock.weatherShow.rain'),
-        cfgPick('Next days', 'clock.forecastDays', [
-          { value: 0, label: 'Off' }, { value: 3, label: '3 days' }, { value: 5, label: '5 days' },
-        ], 'Show the next days'),
-        cfgSeg('Icons', null, 'clock.iconStyle', [
-          { value: 'color', label: 'In color' }, { value: 'text', label: 'Text color' },
-        ]),
-        note('Condition, feels like, rain, next days, and the one-line layout show on the clock over the photo (Pictures only, Hybrid portrait), not in the Hybrid landscape panel.')),
+      cfgToggle('Condition', 'For example "Partly cloudy"', 'clock.weatherShow.condition'),
+      cfgToggle('Feels like', null, 'clock.weatherShow.feelsLike'),
+      cfgToggle('Chance of rain', 'Today\'s highest', 'clock.weatherShow.rain'),
+      cfgPick('Next days', 'clock.forecastDays', [
+        { value: 0, label: 'Off' }, { value: 3, label: '3 days' }, { value: 5, label: '5 days' },
+      ], 'Show the next days'),
     ),
-  ].forEach((g) => main.append(g));
-  return split;
+    note('Condition, feels like, rain, next days, and the one-line layout show on the clock over the photo (Pictures only, Hybrid portrait), not in the Hybrid landscape panel.'),
+  ]);
 }
+
 
 // Appearance (SPEC §9): text style for the clock, date, weather, caption, and calendar; dark mode (11c).
 
@@ -2220,18 +2318,14 @@ function itemSheet(item) {
   const o = () => t()[item.id];
   const saveItem = (patch) => save({ text: { [item.id]: patch } });
   const rows = [
-    row({ title: 'Font', sub: () => (o().font ? fontLabel(o().font) : `Same as all text (${fontLabel(t().font)})`), cls: 'tappable',
-      right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => fontSheet(`${item.label}: font`, o().font, true, (v) => saveItem({ font: v }).then(() => itemSheet(item))) }),
+    linkRow('Font', () => (o().font ? fontLabel(o().font) : 'Same as all text'), () => fontSheet(`${item.label}: font`, o().font, true, (v) => saveItem({ font: v }).then(() => itemSheet(item)))),
   ];
   if (item.id === 'calendar') {
     rows.push(segRow('Text size', null, [
       { value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' },
     ], () => o().size, (v) => saveItem({ size: v })));
   } else {
-    rows.push(row({ title: 'Color', sub: () => (o().color ? colorLabel(o().color) : `Same as all text (${colorLabel(t().color)})`), cls: 'tappable',
-      right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => textColorSheet(`${item.label}: color`, o().color, true, (v) => saveItem({ color: v }).then(() => itemSheet(item))) }));
+    rows.push(linkRow('Color', () => (o().color ? colorLabel(o().color) : 'Same as all text'), () => textColorSheet(`${item.label}: color`, o().color, true, (v) => saveItem({ color: v }).then(() => itemSheet(item)))));
     rows.push(segRow('Bold', null, [
       { value: null, label: 'Same' }, { value: true, label: 'Bold' }, { value: false, label: 'Regular' },
     ], () => o().bold, (v) => saveItem({ bold: v })));
@@ -2266,19 +2360,16 @@ function renderAppearance() {
 
   [
     group('All text',
-      row({ title: 'Font', sub: () => fontLabel(t().font), cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')),
-        onTap: () => fontSheet('Font for all text', t().font, false, (v) => save({ text: { font: v } })) }),
+      linkRow('Font', () => fontLabel(t().font), () => fontSheet('Font for all text', t().font, false, (v) => save({ text: { font: v } }))),
       cfgToggle('Bold', null, 'text.bold'),
-      row({ title: 'Color', sub: () => `${colorLabel(t().color)} (over photos)`, cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')),
-        onTap: () => textColorSheet('Text color', t().color, false, (v) => save({ text: { color: v } })) }),
+      linkRow('Color', () => colorLabel(t().color), () => textColorSheet('Text color', t().color, false, (v) => save({ text: { color: v } }))),
       sliderRow('Shadow', 'Stronger helps on bright photos',
         { min: 0, max: 1, step: 0.05, format: (v) => `${Math.round(v * 100)}%` },
         () => t().shadow, (v) => save({ text: { shadow: Math.round(v * 100) / 100 } })),
-      ...more('text',
-        cfgToggle('Outline', 'A thin edge around each letter', 'text.outline'),
+      cfgToggle('Outline', 'A thin edge around each letter', 'text.outline'),
         sliderRow('Opacity', 'Lower lets the photo show through the text',
           { min: 0.3, max: 1, step: 0.05, format: (v) => `${Math.round(v * 100)}%` },
-          () => t().opacity, (v) => save({ text: { opacity: Math.round(v * 100) / 100 } }))),
+          () => t().opacity, (v) => save({ text: { opacity: Math.round(v * 100) / 100 } })),
     ),
     group('Each item', note('Change one item without changing the rest.'), ...itemRows),
   ].forEach((g) => main.append(g));
@@ -2297,10 +2388,8 @@ function darkModeGroup() {
   const hour12 = () => state.config.clock.hour12;
   const autoRows = [
     pickRow('Dark when', THEME_AUTO, () => th().auto, (v) => save({ theme: { auto: v } }), 'Turn dark'),
-    row({ title: 'Dark from', sub: () => formatHm(th().from, hour12()), cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => timeSheet('Dark from', th().from, hour12(), (v) => save({ theme: { from: v } })) }),
-    row({ title: 'Light from', sub: () => formatHm(th().to, hour12()), cls: 'tappable', right: el('span', '', svg('chevron', 'st-row-icon')),
-      onTap: () => timeSheet('Light from', th().to, hour12(), (v) => save({ theme: { to: v } })) }),
+    linkRow('Dark from', () => formatHm(th().from, hour12()), () => timeSheet('Dark from', th().from, hour12(), (v) => save({ theme: { from: v } }))),
+    linkRow('Light from', () => formatHm(th().to, hour12()), () => timeSheet('Light from', th().to, hour12(), (v) => save({ theme: { to: v } }))),
   ];
   const show = () => {
     const auto = th().mode === 'auto';
@@ -2310,7 +2399,7 @@ function darkModeGroup() {
   };
   show();
   syncers.push(show);
-  return group('Dark mode',
+  return group(null,
     cfgSeg('Theme', () => (th().mode === 'auto'
       ? (document.documentElement.dataset.theme === 'dark' ? 'Dark right now' : 'Light right now')
       : 'Settings, menus, and calendars; photos are not changed'), 'theme.mode', [
@@ -2337,7 +2426,6 @@ function renderCaption() {
   side.append(group('Preview', clockPreview({ caption: true }),
     note('Sample text fills in what the photo on the frame doesn\x27t have.')));
   split.append(main, side);
-  main.append(group(null, backHere('photos')));
 
   const cornerSub = () => {
     const ck = state.config.clock;
@@ -2352,24 +2440,16 @@ function renderCaption() {
 
   [
     group('Show',
-      cfgToggle('Comment', 'Added on the frame (tap the photo) or in Photos → Library', 'caption.showComment'),
+      cfgToggle('Comment', 'Added on the frame (tap the photo) or in Library → Photos and videos', 'caption.showComment'),
       cfgToggle('Location', 'Where the photo was taken, from its GPS', 'caption.showLocation'),
       cfgToggle('Detailed location', () => (c().detailedPlace
         ? 'The place and the town, for example "Space Needle, Seattle, WA"'
         : 'Only the town, for example "Seattle, WA"'), 'caption.detailedPlace'),
       cfgToggle('Date taken', null, 'caption.showDate'),
     ),
-    group('Places',
-      row({
-        title: 'Places',
-        sub: () => {
-          const n = c().privatePlaces.length;
-          return `Your places (${n ? n : 'none yet'}), looking up place names, places left out`;
-        },
-        cls: 'tappable',
-        right: el('span', '', svg('chevron', 'st-row-icon')),
-        onTap: () => go('places'),
-      }),
+    group(null,
+      linkRow('Places', () => String(c().privatePlaces.length || ''), () => go('places'),
+        'Your places, looking up place names, places left out'),
     ),
     group('Style',
       cfgSeg('Lines', () => (c().lines === 'two' ? 'Comment on top, place and date below' : 'Everything on one line'), 'caption.lines', [
@@ -2414,7 +2494,7 @@ function renderPlaces() {
   syncers.push(drawPlaces);
 
   return [
-    group(null, backHere('caption')),
+    backHere('caption'),
     privatePlacesGroup(),
     placeNamesGroup(),
     group('Places left out',
@@ -2792,7 +2872,7 @@ function locationSheet() {
 // Warnings (SPEC §13): everything currently wrong, refreshed while the tab is open.
 
 const WARNING_TABS = {
-  calendar: 'calendars', media: 'photos', upload: 'photos', weather: 'clock', storage: 'system', sleep: 'display', home: 'system', restarts: 'system',
+  calendar: 'calendars', media: 'library', upload: 'upload', weather: 'clock', storage: 'system', sleep: 'display', home: 'system', restarts: 'system',
 };
 
 function renderWarnings() {
@@ -2805,6 +2885,8 @@ function renderWarnings() {
       list.append(infoRow('No internet connection',
         'Photos and calendars keep working from what the frame has saved. Calendars and weather update when the connection is back.'));
     }
+    state.warnCount = v.warnings.length;
+    navSyncers.forEach((fn) => fn());
     for (const w of v.warnings) {
       let when = '';
       if (w.kind === 'calendar') when = w.lastSuccessAt ? ` Last updated ${agoText(w.lastSuccessAt)}.` : ' Never updated.';
@@ -3146,17 +3228,112 @@ async function loadSystem() {
 
 // ---- navigation, inactivity, start ----
 
+let navSyncers = []; // the list's values (they stay while pages change)
+
+/** A coloured icon square, like Apple's. */
+function iconSquare(s) {
+  const sq = el('span', 'st-icon', svg(s.icon));
+  sq.style.background = s.color;
+  return sq;
+}
+
+/** The section list: a search box, then the sections in their groups, each with its value. */
 function buildNav() {
+  const search = el('label', 'st-search', svg('search'));
+  const box = el('input');
+  Object.assign(box, { type: 'search', placeholder: 'Search', spellcheck: false });
+  box.setAttribute('autocomplete', 'off');
+  box.setAttribute('aria-label', 'Search settings');
+  search.append(box);
+  const results = el('div', 'st-nav-group st-results');
+  results.hidden = true;
+  nav.append(search, results);
+  const groups = [];
+  let list = null;
   for (const s of SECTIONS) {
     if (s.parent) continue;
-    const b = el('button', 'st-nav-item', svg(s.id));
+    if (!list || String(s.group) !== list.dataset.group) {
+      list = el('div', 'st-nav-group');
+      list.dataset.group = s.group;
+      nav.append(list);
+      groups.push(list);
+    }
+    const b = el('button', 'st-nav-item');
     b.type = 'button';
     b.dataset.id = s.id;
-    b.append(text('span', '', s.label));
+    b.append(iconSquare(s), text('span', 'st-nav-label', s.label));
+    if (s.value) {
+      const v = el('span', 'st-value');
+      b.append(v);
+      navSyncers.push(() => { let x = ''; try { x = s.value() || ''; } catch (e) { /* not loaded yet */ } v.textContent = x; });
+    }
     b.insertAdjacentHTML('beforeend', svg('chevron', 'st-nav-chevron'));
     b.addEventListener('click', () => { navStack = []; go(s.id, { push: false }); });
-    nav.append(b);
+    list.append(b);
   }
+  box.addEventListener('input', () => {
+    const q = box.value.trim();
+    results.hidden = !q;
+    groups.forEach((g) => { g.hidden = !!q; });
+    if (q) showResults(results, q);
+  });
+}
+
+/** Search: every word typed is found in a setting's name, its page, or its extra words. */
+function searchSettings(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const out = [];
+  const where = (s) => {
+    const p = s.parent && SECTIONS.find((x) => x.id === s.parent);
+    return p ? `${p.label} › ${s.label}` : s.label;
+  };
+  for (const s of SECTIONS) {
+    const top = s.parent ? SECTIONS.find((x) => x.id === s.parent) : s;
+    const entries = [`${s.label}|`, ...(s.find || [])];
+    entries.forEach((f, i) => {
+      const [title, more = ''] = f.split('|');
+      const hay = `${title} ${more} ${s.label}`.toLowerCase();
+      if (!words.every((w) => hay.includes(w))) return;
+      // Names that start with the words first, then the pages themselves, then the rest.
+      const rank = (title.toLowerCase().startsWith(words[0]) ? 0 : 2) + (i === 0 ? 0 : 1);
+      out.push({ title, section: s.id, where: i === 0 ? (s.parent ? top.label : '') : where(s), top, rank, page: i === 0 });
+    });
+  }
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 30);
+}
+
+function showResults(box, q) {
+  box.innerHTML = '';
+  const found = searchSettings(q);
+  if (!found.length) { box.append(note('No settings found.')); return; }
+  for (const f of found) {
+    const b = el('button', 'st-nav-item st-result');
+    b.type = 'button';
+    const t = el('span', 'st-nav-label');
+    t.append(text('span', '', f.title));
+    if (f.where) t.append(text('small', '', f.where));
+    b.append(iconSquare(f.top), t);
+    b.insertAdjacentHTML('beforeend', svg('chevron', 'st-nav-chevron'));
+    b.addEventListener('click', () => {
+      navStack = [];
+      go(f.section, { push: false });
+      if (!f.page) showFound(f.title);
+    });
+    box.append(b);
+  }
+}
+
+/** Scrolls to the setting found and lights it up for a moment (rows that load late: tries for ~2 s). */
+function showFound(title, tries = 8) {
+  const t = title.toLowerCase();
+  const all = [...pane.querySelectorAll('.st-row-title, .st-group-title')].filter((x) => x.offsetParent);
+  const hit = all.find((x) => x.textContent.trim().toLowerCase() === t) || all.find((x) => x.textContent.trim().toLowerCase().startsWith(t));
+  if (!hit) { if (tries > 0) setTimeout(() => showFound(title, tries - 1), 250); return; }
+  const target = hit.closest('.st-row') || hit;
+  target.scrollIntoView({ block: 'center' });
+  target.classList.remove('st-found');
+  void target.offsetWidth; // restart the animation
+  target.classList.add('st-found');
 }
 
 function go(id, { push = true } = {}) {
@@ -3229,10 +3406,16 @@ async function start() {
     }
   }
   applyTheme(state.config, weather.value);
+  navSyncers.forEach((fn) => fn());
   weather.start(); // sunset and sunrise for automatic dark mode
   weather.onChange(() => applyTheme(state.config, weather.value));
   setInterval(() => applyTheme(state.config, weather.value), 60000);
   loadSystem().then(sync); // frame time zone and address shown in several rows
+  // The list's counts: calendars, and warnings (again every minute).
+  loadCalendars().then(sync);
+  const warnCount = () => api('/api/warnings').then((v) => { state.warnCount = v.warnings.length; sync(); }).catch(() => {});
+  warnCount();
+  setInterval(warnCount, 60000);
   const fromHash = sectionId(location.hash.slice(1));
   state.section = SECTIONS.some((s) => s.id === fromHash) ? fromHash : (narrow() ? null : SECTIONS[0].id);
   if (fromHash !== location.hash.slice(1)) history.replaceState(null, '', `#${fromHash}`);

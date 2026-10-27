@@ -3,6 +3,8 @@
    overrides for the rest. Photos, the clock overlay, and the caption are unchanged. */
 
 html[data-theme="dark"] {
+  --st-page: #0f1011;
+  --st-fill: rgba(118, 118, 128, 0.24);
   --st-bg: #202124;
   --st-nav-bg: #2d2e31;
   --st-text: #e8eaed;

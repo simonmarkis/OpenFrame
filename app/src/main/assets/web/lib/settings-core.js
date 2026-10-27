@@ -65,6 +65,15 @@ export function formatDuration(sec) {
   return plural(round1(sec / 86400), 'day');
 }
 
+/** A duration for tight spots (the Settings list, 2026-10-27): "30 sec", "1.5 min", "2 hr", "1 day". */
+export function shortDuration(sec) {
+  const round1 = (x) => Math.round(x * 10) / 10;
+  if (sec < 60) return `${sec} sec`;
+  if (sec < 3600) return `${round1(sec / 60)} min`;
+  if (sec < 86400) return `${round1(sec / 3600)} hr`;
+  return plural(round1(sec / 86400), 'day');
+}
+
 /** The option list, with the current value added (sorted) if it isn't one of the choices. */
 export function withCurrent(options, current) {
   return options.includes(current) ? options.slice() : [...options, current].sort((a, b) => a - b);

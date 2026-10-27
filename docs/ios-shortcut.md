@@ -6,14 +6,11 @@ Select photos or videos in the Photos app → **Share** → **Send to Frame**.
 web access PIN). That page walks through the steps with pictures of each action and Copy buttons for
 the address and the upload key. This file is the same guide in text.
 
-Status: built by the user on iOS (2026-10-13); sending several photos at once works. A video arrived
-through it on 2026-10-14 (1080p HEVC, plays on the frame) but without its date and place: steps 6–7
-(added 2026-10-14, Phase 12) send them. **Verified on the iPhone 2026-10-15**: a video arrived with
-its date and place (named by the frame's city list), after fixing the two mistakes below.
+Sending several photos and videos at once works; videos arrive with their date and place (steps 6–7).
 
-**Already have the Shortcut?** Add the actions of step 6 you don't have yet just above your "Get Contents
-of URL", and change its address as in step 7. New on 2026-10-19 (precise place names, SPEC §8): **Name**,
-**URL Encode**, and `&place=`. Then export it again and upload it in Settings → Photos → iPhone Shortcut.
+**Already have an older version?** Add the actions of step 6 you don't have yet (**Name**, **URL Encode**) just
+above your "Get Contents of URL", and change its address as in step 7 (`&place=`). Then export it again and
+upload it in Settings → Add from your phone → iPhone Shortcut.
 
 ## The Shortcut
 
@@ -26,31 +23,31 @@ of URL", and change its address as in step 7. New on 2026-10-19 (precise place n
    **Preserve Metadata: On**. With Shortcut Input every pass re-sends the first photo and the frame
    skips the copies (the bug in the first real test).
 5. Under **Otherwise**: **Encode Media** → **Repeat Item** → Size **1920×1080** (H.264). Not "HEVC 1920×1080":
-   it kept an iPhone HDR video in 10-bit HDR, which the frame refuses (2026-10-19); plain 1920×1080 turned an HDR
+   it kept an iPhone HDR video in 10-bit HDR, which the frame refuses; plain 1920×1080 turned an HDR
    video into standard 8-bit H.264 (checked on the frame, about 15 Mbps).
 6. After **End If**: **Get Details of Images** → **Location** from **Repeat Item**; then
    **Get Details of Locations** → **Latitude** from **Location**, and again → **Longitude**.
    Once more → **Name** from **Location** (the place's name as the Photos app shows it), then
    **URL Encode** → **Encode** the **Name** (a name with "&" would otherwise break the address).
    (Converting a video drops its date and place; photos keep theirs, so sending them too is harmless.)
-   **Not inside "Otherwise"** (seen 2026-10-15): there the If Result for a video becomes the longitude,
+   **Not inside "Otherwise"**: there the If Result for a video becomes the longitude,
    and the frame answers "The Shortcut sent text instead of the photo or video".
 7. Below those, still inside the repeat: **Get Contents of URL**
    - URL `http://<frame IP>:8080/api/upload?taken=` + variable **Repeat Item** → **Date Taken**,
      Date Format **ISO 8601** + `&lat=` + **Latitude** + `&lon=` + **Longitude** + `&place=` +
      **URL Encoded Text**. The `=` goes
-     **before** each variable (seen 2026-10-15: `&lat`+Latitude+`=` sends no place at all).
-     The date must stay **ISO 8601** (seen 2026-10-19 while adding `&place=`: the date became Shortcuts'
-     default "Oct 19, 2026 at 7:46 AM"; its raw spaces end the address, so the frame got `taken=Oct` and no
+     **before** each variable (`&lat`+Latitude+`=` sends no place at all).
+     The date must stay **ISO 8601** (Shortcuts' default format, like "Oct 19, 2026 at 7:46 AM", has spaces
+     that end the address, so the frame got `taken=Oct` and no
      lat, lon, or place; the log says "Upload address cut at a space").
      Tap the date variable to check it says **Repeat Item**: with **Shortcut Input** every file gets the
-     first one's date (seen 2026-10-16; the frame now keeps a photo's own date, but a video has none).
+     first one's date (the frame keeps a photo's own date, but a video has none).
    - Method **POST**
-   - Header `X-Upload-Key` = the upload key (Settings → Photos → iPhone Shortcut)
+   - Header `X-Upload-Key` = the upload key (Settings → Add from your phone → iPhone Shortcut)
    - Request Body **File** → **If Result**
 8. Try it from Photos. Allow local-network access the first time.
 9. For several photos at once (or large videos): iPhone **Settings → Shortcuts → Advanced → Allow Sharing
-   Large Amounts of Data** (found by the user, 2026-10-15); without it iOS stops the Shortcut.
+   Large Amounts of Data**; without it iOS stops the Shortcut.
 
 Photos go full size as JPEG (the frame makes its own screen-sized copies); videos are re-encoded to
 1080p H.264 8-bit (the frame plays H.264/HEVC up to 1080p, not 4K or 10-bit HDR). The frame names the
@@ -84,5 +81,5 @@ than 1080p are refused by the page before sending, with a pointer to the Shortcu
 ## Still to check
 
 - Whether **location** survives Safari's picker (the Shortcut with Preserve Metadata keeps it,
-  verified 2026-10-14). It matters for the photo caption (SPEC §8).
+  verified). It matters for the photo caption (SPEC §8).
 - Whether Safari's picker keeps HEVC videos as they are or converts them.

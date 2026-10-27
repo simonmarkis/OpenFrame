@@ -110,7 +110,8 @@ class MediaIndexer(
         VideoStrip.build(video, img)?.also { meta.writeText(it.toString()) }
     }
 
-    private fun deleteDerived(id: Long) {
+    /** The display copy, background, and preview strip made for item [id]. */
+    fun deleteDerived(id: Long) {
         displayFile(id).delete()
         backgroundFile(id).delete()
         stripFile(id).delete()

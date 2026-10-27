@@ -57,9 +57,9 @@
     <h1>Send photos to the frame from your iPhone</h1>
     <p class="lead">Build this once in the <b>Shortcuts</b> app (about 5 minutes). Afterwards: select photos or videos in
       <b>Photos</b> → Share → <b>Send to Frame</b>. Keep this page open next to Shortcuts; the two values you need have Copy buttons.</p>
-    <div class="note" style="margin-bottom:14px"><b>Already have the Shortcut?</b> Add the actions of <b>step 6</b> you don't have yet just above your “Get Contents of URL”, and change its address as in <b>step 7</b>. Then videos keep their date and place (converting a video drops them), and captions show the place's name (new: <b>Name</b>, <b>URL Encode</b>, and <code>&amp;place=</code>). Afterwards export it again for the frame (Settings → iPhone Shortcut).</div>
+    <div class="note" style="margin-bottom:14px"><b>Already have the Shortcut?</b> Add the actions of <b>step 6</b> you don't have yet just above your “Get Contents of URL”, and change its address as in <b>step 7</b>. Then videos keep their date and place (converting a video drops them), and captions show the place's name (new: <b>Name</b>, <b>URL Encode</b>, and <code>&amp;place=</code>). Afterwards export it again for the frame (Settings → Add from your phone → iPhone Shortcut).</div>
 
-    <!-- The user's own export, kept on the frame (Settings → Photos → iPhone Shortcut); shown when there is one. -->
+    <!-- The user's own export, kept on the frame (Settings → Add from your phone → iPhone Shortcut); shown when there is one. -->
     <section class="step ready" id="ready" hidden>
       <h2>Ready-made Shortcut</h2>
       <p id="readyText">Download it, open it, and tap <b>Add Shortcut</b>: it is already set up for this frame, so you can skip the steps below.</p>
@@ -157,7 +157,7 @@
     </section>
 
     <p class="muted">The upload key only lets the Shortcut add photos and videos. You can replace it any time in
-      Settings → Photos → iPhone Shortcut → New key (then paste the new one in step 7). <a href="/settings#photos">Settings</a></p>
+      Settings → Add from your phone → iPhone Shortcut → New key (then paste the new one in step 7). <a href="/settings#upload">Settings</a></p>
   </main>
 
   <script>
@@ -213,7 +213,7 @@
       const t = document.getElementById('readyText');
       t.className = 'warn';
       t.textContent = 'The ready-made Shortcut on the frame is out of date (' + why + ' since it was made). ' +
-        'Build it with the steps below, or export it again and upload it in Settings → Photos → iPhone Shortcut.';
+        'Build it with the steps below, or export it again and upload it in Settings → Add from your phone → iPhone Shortcut.';
     }).catch(() => {});
   </script>
   <script type="module">

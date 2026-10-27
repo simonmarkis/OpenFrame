@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PALETTE, sectionNames, formatDuration, withCurrent, agoText, feedStatusText, formatBytes,
+  PALETTE, sectionNames, formatDuration, shortDuration, withCurrent, agoText, feedStatusText, formatBytes,
   hslToHex, hexToHsl, isHexColor, placeLabel, placeDetail, formatHm, toHm, daysSummary, dayTimeText, clipLength,
 } from '../../app/src/main/assets/web/lib/settings-core.js';
 
@@ -48,6 +48,9 @@ test('next sleep and wake times', () => {
 test('durations read naturally', () => {
   assert.equal(formatDuration(1), '1 second');
   assert.equal(formatDuration(30), '30 seconds');
+  assert.equal(shortDuration(30), '30 sec');
+  assert.equal(shortDuration(90), '1.5 min');
+  assert.equal(shortDuration(7200), '2 hr');
   assert.equal(formatDuration(60), '1 minute');
   assert.equal(formatDuration(90), '1.5 minutes');
   assert.equal(formatDuration(3600), '1 hour');

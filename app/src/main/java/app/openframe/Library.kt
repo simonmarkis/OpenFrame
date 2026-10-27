@@ -38,6 +38,22 @@ class Library(private val app: OpenFrameApp) {
         handler.postDelayed(purge, 60_000)
     }
 
+    /**
+     * Settings → Unplugged drives → Forget (user 2026-10-27): the frame drops a drive it remembers, with its items'
+     * settings and the copies it made of them (display copies, thumbnails, strips). The drive's files stay as they are;
+     * plugged in again, it is read as a new drive. Returns how many items were forgotten.
+     */
+    fun forgetVolume(volume: String): Int = synchronized(lock) {
+        val ids = app.mediaDb.forgetVolume(volume)
+        for (id in ids) {
+            app.indexer.deleteDerived(id)
+            File(thumbs, "$id.jpg").delete()
+        }
+        app.slideshow.onLibraryChanged()
+        Log.i(TAG, "Library: a drive was forgotten, ${ids.size} item(s)")
+        ids.size
+    }
+
     // ---- thumbnails ----
 
     fun thumbFor(item: MediaDb.Item): File? {

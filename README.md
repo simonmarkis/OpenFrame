@@ -19,7 +19,7 @@ This app has been mostly vibe-coded so use at your own discretion.
 ## How it is built
 
 A thin Kotlin shell (no AndroidX, no Play Services) hosts a local web UI (plain HTML/CSS/JS, no build step) in one
-WebView and serves it with an embedded HTTP server on port 8080. Details, decisions, and the phase history are in
+WebView and serves it with an embedded HTTP server on port 8080. How it all fits together is in
 [`docs/SPEC.md`](docs/SPEC.md); bundled third-party components and data services in
 [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md).
 

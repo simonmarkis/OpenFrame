@@ -12,8 +12,8 @@ android {
         // The app only ever runs on the frame (Android 8.1). Targeting 27 keeps
         // platform behavior identical to what the device actually implements.
         targetSdk = 27
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.1"
     }
 
     // The user's own key signs both build types (V1.0.0, 2026-10-19), so test and release builds update each

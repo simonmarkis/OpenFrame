@@ -4,13 +4,27 @@
 $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $PSScriptRoot
-$Serial = $env:OPENFRAME_SERIAL # empty: the one device adb sees
+# Optional: "<frame-ip>:5555" to use debugging over Wi-Fi when no cable is plugged in (scripts\wifi-adb.ps1).
+$WifiAddress = $env:OPENFRAME_WIFI
 
 $AdbExe = if ($env:ADB) { $env:ADB } else {
     $onPath = Get-Command adb -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($onPath) { $onPath.Source } else { "$env:USERPROFILE\Downloads\platform-tools-latest-windows\platform-tools\adb.exe" }
 }
 if (-not (Test-Path $AdbExe)) { throw "adb not found at $AdbExe. Set `$env:ADB to its full path." }
+
+# The frame: OPENFRAME_SERIAL, else a device on the cable, else debugging over Wi-Fi (OPENFRAME_WIFI), else the one
+# device adb sees. Wi-Fi debugging goes off at every restart of the frame: plug the cable in once and run wifi-adb.ps1.
+function Resolve-Frame {
+    if ($env:OPENFRAME_SERIAL) { return $env:OPENFRAME_SERIAL }
+    if (-not $WifiAddress) { return '' }
+    $listed = @(& $AdbExe devices 2>$null)
+    $usb = $listed | Where-Object { $_ -match '^\S+\s+device$' -and $_ -notmatch ':' } | Select-Object -First 1
+    if ($usb) { return ($usb -split '\s+')[0] }
+    if (-not ($listed -match "^$([regex]::Escape($WifiAddress))\s+device")) { & $AdbExe connect $WifiAddress | Out-Null }
+    return $WifiAddress
+}
+$Serial = Resolve-Frame
 
 if (-not $env:JAVA_HOME) { $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr' }
 if (-not $env:ANDROID_HOME) { $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk" }

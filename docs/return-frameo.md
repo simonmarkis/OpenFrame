@@ -1,6 +1,6 @@
 # Return Frameo
 
-How to bring stock Frameo back after OpenFrame replaced it (Frameo was turned off on 2026-10-13).
+How to bring stock Frameo back after OpenFrame replaced it.
 Nothing was uninstalled: Frameo is only **disabled**, with all its photos and settings kept.
 
 ## Before you start

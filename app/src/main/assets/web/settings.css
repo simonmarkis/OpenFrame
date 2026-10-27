@@ -3,6 +3,8 @@
    Colors are variables so a dark theme (SPEC §9a) is a variable swap. */
 
 :root {
+  --st-page: #f2f2f7; /* behind the grouped cards, like iOS */
+  --st-fill: rgba(118, 118, 128, 0.12); /* search box */
   --st-bg: #fff;
   --st-nav-bg: #f1f3f4;
   --st-text: #202124;
@@ -28,7 +30,7 @@ html, body { margin: 0; height: 100%; }
 body {
   display: flex;
   flex-direction: column;
-  background: var(--st-bg);
+  background: var(--st-page);
   color: var(--st-text);
   font-family: sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -67,50 +69,75 @@ svg { fill: currentColor; }
 .st-main { flex: 1; display: flex; min-height: 0; }
 .st-nav {
   flex: none;
-  width: 30%;
-  max-width: 21rem;
-  padding: 0.7rem 0.6rem;
-  background: var(--st-nav-bg);
+  width: clamp(17rem, 32%, 22rem); /* portrait frame: room for "Brightness and sleep" and a value */
+  padding: 0.8rem 0.8rem 2rem;
+  border-right: 1px solid var(--st-line);
   overflow-y: auto;
 }
+/* Search (2026-10-27): finds a setting by its name or a word about it. */
+.st-search { display: flex; align-items: center; gap: 0.5rem; height: 2.6rem; padding: 0 0.8rem; border-radius: 0.7rem; background: var(--st-fill); }
+.st-search svg { width: 1.25rem; height: 1.25rem; flex: none; fill: var(--st-muted); }
+.st-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: none; font-size: 1rem; }
+.st-search input::placeholder { color: var(--st-muted); }
+/* The list in groups of cards; each section with a coloured icon square and its value (like Apple's). */
+.st-nav-group { margin-top: 1rem; border-radius: 0.9rem; background: var(--st-bg); overflow: hidden; }
+.st-nav-group > .st-note { margin: 0.9rem 1rem; }
 .st-nav-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.8rem;
   width: 100%;
-  min-height: 3.2rem;
-  margin-bottom: 0.2rem;
-  padding: 0.5rem 1rem;
+  min-height: 2.9rem;
+  padding: 0.35rem 0.9rem;
   border: 0;
-  border-radius: 1.6rem;
   background: none;
-  font-size: 1.02rem;
+  font-size: 1rem;
   text-align: left;
 }
-.st-nav-item svg { width: 1.5rem; height: 1.5rem; flex: none; fill: var(--st-muted); }
-.st-nav-item:active { background: rgba(0, 0, 0, 0.06); }
-.st-nav-item.on { background: var(--st-accent-bg); color: var(--st-accent); font-weight: bold; }
-.st-nav-item.on svg { fill: var(--st-accent); }
-.st-nav-chevron { display: none; }
+.st-nav-item + .st-nav-item::before { content: ''; position: absolute; left: 3.6rem; right: 0; top: 0; height: 1px; background: var(--st-line); }
+.st-nav-item:active { background: var(--st-press); }
+.st-nav-item.on { background: var(--st-accent-bg); }
+.st-nav-item.on .st-nav-label { color: var(--st-accent); font-weight: bold; }
+.st-icon { display: flex; align-items: center; justify-content: center; width: 1.9rem; height: 1.9rem; flex: none; border-radius: 0.45rem; }
+.st-icon svg { width: 1.2rem; height: 1.2rem; fill: #fff; }
+.st-nav-label { flex: 1; min-width: 0; }
+.st-nav-label small { display: block; margin-top: 0.1rem; color: var(--st-muted); font-size: 0.8rem; }
+.st-nav-item .st-value { max-width: 40%; margin-left: 0.3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+.st-nav-chevron { display: none; width: 1.3rem; height: 1.3rem; flex: none; fill: var(--st-muted); }
+.st-result .st-nav-chevron { display: block; }
 
 .st-pane { flex: 1; min-width: 0; overflow-y: auto; padding-bottom: 3rem; }
 
 /* Narrow screens (phones on the LAN): section list first, then one section at a time. */
 @media (max-width: 700px) {
-  .st-nav { width: 100%; max-width: none; background: var(--st-bg); }
-  .st-nav-item { border-radius: 0.8rem; }
-  .st-nav-item.on { background: none; color: inherit; font-weight: normal; }
-  .st-nav-item.on svg { fill: var(--st-muted); }
-  .st-nav-chevron { display: block; margin-left: auto; }
+  .st-nav { width: 100%; max-width: none; border-right: 0; }
+  .st-nav-item.on { background: none; }
+  .st-nav-item.on .st-nav-label { color: inherit; font-weight: normal; }
+  .st-nav-chevron { display: block; }
   body.st-in-section .st-nav { display: none; }
   body:not(.st-in-section) .st-pane { display: none; }
 }
 
 /* ---- groups and rows ---- */
-.st-group { border-bottom: 1px solid var(--st-line); padding: 0.4rem 0 0.5rem; }
-.st-group:last-child { border-bottom: 0; }
-.st-group-title { margin: 0; padding: 0.9rem 1.4rem 0.3rem; color: var(--st-accent); font-size: 0.9rem; font-weight: bold; }
-.st-note { margin: 0.2rem 1.4rem 0.6rem; color: var(--st-muted); font-size: 0.85rem; line-height: 1.4; }
+/* Groups are cards (iOS grouped lists): the title above the card, a note after a group is its footer. The card is
+   drawn by ::before so a title (always the first child) can sit above it. */
+.st-group { position: relative; z-index: 0; margin: 1.2rem 1rem 0; }
+.st-group::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 0.9rem; background: var(--st-bg); }
+.st-group:has(> .st-group-title:first-child)::before { top: 2.6rem; }
+.st-group:empty { display: none; }
+.st-group-title { height: 2.6rem; margin: 0; padding: 1.05rem 1.4rem 0; color: var(--st-muted); font-size: 0.85rem; font-weight: normal; line-height: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-group + .st-group:has(> .st-group-title:first-child) { margin-top: 0.6rem; }
+.st-note { margin: 0.5rem 1.4rem 0.6rem; color: var(--st-muted); font-size: 0.85rem; line-height: 1.4; }
+.st-pane > .st-note, .st-split-main > .st-note, .st-split-side > .st-note { margin: 0.5rem 2.4rem 0; }
+.st-group > .st-row { position: relative; }
+.st-group > .st-row + .st-row::before { content: ''; position: absolute; left: 1.4rem; right: 0; top: 0; height: 1px; background: var(--st-line); }
+.st-group > .st-row:last-child { border-radius: 0 0 0.9rem 0.9rem; }
+.st-group > .st-row:first-child { border-radius: 0.9rem 0.9rem 0 0; }
+.st-group > .st-row:first-child:last-child { border-radius: 0.9rem; }
+/* Search: the setting found lights up for a moment. */
+@keyframes st-found { from { background: var(--st-accent-bg); } to { background: transparent; } }
+.st-found { animation: st-found 2.4s ease-in; }
 .st-note b { color: var(--st-text); font-weight: normal; user-select: all; }
 
 .st-row {
@@ -134,6 +161,9 @@ button.st-row:active, .st-row.tappable:active { background: var(--st-press); }
 .st-row.accent .st-row-title { color: var(--st-accent); }
 .st-row.off { opacity: 0.55; }
 .st-value { flex: none; color: var(--st-muted); font-size: 0.95rem; }
+/* The value beside the chevron (linkRow): shortened with … rather than squeezing the name. */
+.st-row-end { display: flex; align-items: center; gap: 0.3rem; flex: 0 1 auto; min-width: 0; max-width: 55%; }
+.st-row-end .st-value { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .st-dot { width: 1.4rem; height: 1.4rem; flex: none; border-radius: 50%; }
 
@@ -208,12 +238,10 @@ button.st-row:active, .st-row.tappable:active { background: var(--st-press); }
 /* Preview beside the controls on wide screens (sticky while the controls scroll), above them otherwise */
 .st-split { display: flex; flex-direction: column; }
 .st-split-side { order: -1; }
-.st-split-side > .st-group { border-bottom: 1px solid var(--st-line); }
 .st-split-main { min-width: 0; }
 @media (orientation: landscape) and (min-width: 900px) {
   .st-split { flex-direction: row; align-items: flex-start; }
-  .st-split-side { order: 0; flex: 0 0 46%; position: sticky; top: 0; border-left: 1px solid var(--st-line); }
-  .st-split-side > .st-group { border-bottom: 0; }
+  .st-split-side { order: 0; flex: 0 0 46%; position: sticky; top: 0; }
   .st-split-main { flex: 1; }
 }
 
@@ -312,11 +340,6 @@ body.st-keyboard .st-sheet { max-height: 56vh; }
 /* Reminder times (calendar sheet) and chimes (Sound). */
 .st-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.4rem 1.4rem 0.8rem; }
 .st-chips[hidden], .st-field-label[hidden] { display: none; }
-/* "More options" folds (user decision 2026-10-16). */
-.st-folded { display: none !important; }
-.st-more .st-row-title { color: var(--st-accent); font-weight: bold; }
-.st-more .st-more-icon .st-row-icon { transform: rotate(90deg); transition: transform 0.15s; }
-.st-more.open .st-more-icon .st-row-icon { transform: rotate(-90deg); }
 .st-chip { padding: 0.5rem 1rem; border: 1px solid var(--st-line); border-radius: 2rem; background: none; color: var(--st-muted); font: inherit; font-weight: bold; }
 .st-chip.on { border-color: var(--st-accent); background: var(--st-accent); color: #fff; }
 .st-chime { display: flex; align-items: center; }
@@ -373,7 +396,7 @@ body.st-keyboard .st-sheet { max-height: 56vh; }
 .st-key { margin: 0.3rem 1.4rem 0.6rem; padding: 0.7rem 0.9rem; border-radius: 0.6rem; background: var(--st-nav-bg); font: 1.1rem monospace; letter-spacing: 0.08em; overflow-wrap: anywhere; user-select: all; }
 
 /* Library and Trash (sub-pages of Photos) */
-.st-backlink { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.4rem 0.8rem 0.2rem; padding: 0.4rem 0.8rem 0.4rem 0.4rem; border: 0; border-radius: 1.2rem; background: none; color: var(--st-accent); font-size: 1rem; }
+.st-backlink { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0.8rem -0.4rem; padding: 0.4rem 0.8rem 0.4rem 0.4rem; border: 0; border-radius: 1.2rem; background: none; color: var(--st-accent); font-size: 1rem; }
 .st-backlink svg { width: 1.4rem; height: 1.4rem; fill: var(--st-accent); }
 .st-backlink:active { background: var(--st-press); }
 .st-lib-seg { display: inline-flex; margin: 0.4rem 1.4rem 0.2rem; }

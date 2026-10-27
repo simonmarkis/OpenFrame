@@ -192,6 +192,7 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
                     json(Response.Status.ACCEPTED, app.placeLookup.json())
                 }
                 uri.startsWith("/api/video/") && uri.endsWith("/strip") && m == Method.GET -> videoStrip(uri)
+                uri.startsWith("/api/volumes/") && m == Method.DELETE -> forgetVolume(uri)
                 uri.startsWith("/api/") -> error(Response.Status.NOT_FOUND, "not found")
                 uri == "/settings" && (m == Method.GET || m == Method.HEAD) -> staticFile("/settings.html")
                 uri == "/upload" && (m == Method.GET || m == Method.HEAD) -> staticFile("/upload.html")
@@ -713,6 +714,7 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
         val counts = app.mediaDb.counts()
         val byVolume = app.mediaDb.countsByVolume()
         val labels = app.mediaDb.volumeLabels()
+        val lastSeen = app.mediaDb.volumeLastSeen()
         val mounted = app.indexer.volumes.associateBy { it.id }
 
         val totals = JSONObject()
@@ -726,7 +728,8 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
                 .put("label", mv?.label ?: labels[id])
                 .put("mounted", mv != null)
                 .put("path", mv?.scanRoot?.path ?: JSONObject.NULL)
-                .put("items", byVolume[id] ?: 0))
+                .put("items", byVolume[id] ?: 0)
+                .put("lastSeen", lastSeen[id] ?: JSONObject.NULL))
         }
 
         val problems = JSONArray()
@@ -807,6 +810,15 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
         return newFixedLengthResponse(Response.Status.OK, "image/jpeg", FileInputStream(file), file.length()).apply {
             addHeader("Cache-Control", "private, max-age=86400")
         }
+    }
+
+    /** `DELETE /api/volumes/<id>`: forget an unplugged drive the frame remembers ([Library.forgetVolume]). */
+    private fun forgetVolume(uri: String): Response {
+        val id = java.net.URLDecoder.decode(uri.removePrefix("/api/volumes/"), "UTF-8")
+        if (!id.startsWith("removable:")) return error(Response.Status.BAD_REQUEST, "Only USB drives and SD cards can be forgotten")
+        if (app.indexer.volumes.any { it.id == id }) return error(Response.Status.CONFLICT, "This drive is plugged in: unplug it first")
+        if (id !in app.mediaDb.volumeLabels()) return error(Response.Status.NOT_FOUND, "The frame doesn't remember this drive")
+        return json(Response.Status.OK, JSONObject().put("ok", true).put("items", app.library.forgetVolume(id)))
     }
 
     private fun rescan(): Response {
