@@ -767,14 +767,40 @@ function shortcutFileBox(info, reopen) {
   return box;
 }
 
+/**
+ * The frame's address for the Shortcut (V1.0.2, user's choice): its name (openframe.local) and the address the
+ * Shortcut really sends to, from the last upload with the key. An IP there stops working when the router hands
+ * the frame a new one.
+ */
+function shortcutAddressBox(info) {
+  const net = (state.system && state.system.network) || {};
+  const box = el('div');
+  const frame = net.name
+    ? `${net.name}${net.ip ? ` (now ${net.ip})` : ''}`
+    : (net.ip || 'Not on the network') + (net.nameProblem ? ` (no network name: ${net.nameProblem})` : '');
+  box.append(text('div', 'st-field-label st-key-label', 'Frame address'), text('p', '', frame));
+  const to = info.sendsTo;
+  const when = to && new Date(to.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const sends = !to
+    ? 'Not known yet: it shows after the next photo the Shortcut sends.'
+    : to.isName
+      ? `Sends to ${to.host} ✓ (last upload ${when})`
+      : `Sends to ${to.host} (last upload ${when}). Works until the router gives the frame a new address. ` +
+        `Change it to ${net.name || 'openframe.local'} (set-up guide, step 7).`;
+  box.append(text('div', 'st-field-label st-key-label', 'Your Shortcut'), text('p', '', sends));
+  return box;
+}
+
 async function shortcutSheet() {
   let key;
   let fileInfo = { hasFile: false };
   try {
     [key, fileInfo] = await Promise.all([api('/api/upload/key').then((r) => r.key), api('/api/shortcut')]);
   } catch (e) { toast(e.message, true); return; }
-  const ip = (state.system && state.system.network.ip) || '<frame address>';
-  const guideUrl = `http://${ip}:8080/shortcut`;
+  if (!state.system) await loadSystem();
+  const net = (state.system && state.system.network) || {};
+  // The guide is for the iPhone, which finds the frame by name (V1.0.2).
+  const guideUrl = `http://${net.name || net.ip || '<frame address>'}:8080/shortcut`;
   const keyEl = text('div', 'st-key', key);
   // The step-by-step guide (/shortcut) is made for the iPhone, next to the Shortcuts app.
   const guide = isFrame
@@ -798,6 +824,7 @@ async function shortcutSheet() {
     body: [
       text('p', '', 'The Shortcut uses its own key instead of the PIN. The key can only add photos and videos.'),
       guide,
+      shortcutAddressBox(fileInfo),
       text('div', 'st-field-label st-key-label', 'Upload key'), keyEl,
       shortcutFileBox(fileInfo, shortcutSheet),
     ],

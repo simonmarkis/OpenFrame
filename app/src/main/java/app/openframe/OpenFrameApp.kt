@@ -37,8 +37,13 @@ class OpenFrameApp : Application() {
         private set
     lateinit var sound: SoundController
         private set
+    /** The frame's name on the network, openframe.local (SPEC §17). */
+    lateinit var mdnsName: MdnsName
+        private set
     /** The last refused upload, for its warning (SPEC §13). */
     val uploadRefusals by lazy { UploadRefusals(filesDir) }
+    /** The user's exported Shortcut and the address it sends to (SPEC §17). */
+    val shortcutFile by lazy { ShortcutFile(java.io.File(filesDir, "shortcut")) }
 
     override fun onCreate() {
         super.onCreate()
@@ -70,6 +75,7 @@ class OpenFrameApp : Application() {
         sound = SoundController(this)
         sound.start()
 
+        mdnsName = MdnsName(this) // before the server: /api/system and the warnings read it
         server = LocalServer(this, SERVER_PORT)
         try {
             server.start(SOCKET_READ_TIMEOUT_MS, false)
@@ -78,6 +84,7 @@ class OpenFrameApp : Application() {
             Log.e(TAG, "LocalServer failed to start on port $SERVER_PORT", e)
         }
         power.start() // after the server: the nightly reload goes through it
+        mdnsName.start()
     }
 
     private companion object {

@@ -25,7 +25,7 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
 
     private val backup = ConfigBackup(app)
     private val access = WebAccess(app.secrets)
-    private val shortcutFile by lazy { ShortcutFile(File(app.filesDir, "shortcut")) }
+    private val shortcutFile get() = app.shortcutFile
     private val powerLog by lazy { PowerLog(app.filesDir) }
     private val warnings = WarningCenter(app)
 
@@ -55,7 +55,11 @@ class LocalServer(private val app: OpenFrameApp, port: Int) : NanoHTTPD(null, po
                 uri == "/api/auth/state" && m == Method.GET -> authState(session)
                 uri == "/api/auth/login" && m == Method.POST -> login(session)
                 // The iPhone Shortcut's key opens this one endpoint only (SPEC §17).
-                uri == "/api/upload" && m == Method.POST && access.uploadKeyMatches(session) -> upload(session)
+                uri == "/api/upload" && m == Method.POST && access.uploadKeyMatches(session) -> {
+                    // Which address the Shortcut sends to (V1.0.2: openframe.local or an IP), for Settings and a warning.
+                    shortcutFile.recordSend(session.headers["host"])
+                    upload(session)
+                }
                 !access.allowed(session) -> pinRequired(session, uri, m)
                 uri == "/api/upload" && m == Method.POST -> upload(session)
                 uri == "/api/upload/key" && m == Method.GET -> json(Response.Status.OK, JSONObject().put("key", access.uploadKey()))

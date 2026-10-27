@@ -44,11 +44,15 @@ object WarningRules {
     /** The last refused upload: when, "photo" / "video" / "file", and the reason the sender got. */
     data class Refused(val at: Long, val what: String, val reason: String)
 
+    /** The Shortcut still sends to [from], an IP the frame had before; it now has [to] and answers to [name]. */
+    data class Moved(val from: String, val to: String, val name: String?)
+
     data class Input(
         val online: Boolean, val now: Long, val feeds: List<Feed>, val weather: Weather,
         val unshowableFiles: Int, val storageFreeBytes: Long?,
         val sleepNeedsAdmin: Boolean = false, val homeLost: Boolean = false, val restartsToday: Int = 0,
         val refusedUpload: Refused? = null, val zone: ZoneId = ZoneId.systemDefault(),
+        val shortcutMoved: Moved? = null,
     )
 
     /** [canPopup]: may pop up until dismissed; [signature] changes when the problem changes. */
@@ -106,6 +110,14 @@ object WarningRules {
             out += Warning("upload", "upload", "${UPLOAD_WHAT[r.what] ?: "A file"} sent to the frame was refused",
                 "${r.reason.trim()} Sent $sent. This goes away after the next upload that works.", 0,
                 canPopup = true, signature = r.at.toString())
+        }
+        i.shortcutMoved?.let { m ->
+            // User decision 2026-10-27 (V1.0.2): an "Upload problem" until the Shortcut sends to the frame again.
+            val fix = m.name?.let { "change it to $it (Settings → Add from your phone → iPhone Shortcut → set-up guide, step 7)" }
+                ?: "change it in the Shortcut's Get Contents of URL"
+            out += Warning("shortcut-address", "upload", "The iPhone Shortcut uses an old address",
+                "The frame's address changed to ${m.to}. Your iPhone Shortcut still sends to ${m.from}: $fix.", 0,
+                canPopup = true, signature = "${m.from}>${m.to}")
         }
         return out
     }

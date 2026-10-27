@@ -64,6 +64,7 @@ Shell (`app/src/main/java/app/openframe/`):
 | `SoundController` | Media and click volumes, reminder chimes on the alarm volume. |
 | `CrashGuard`, `RestartReceiver`, `HomeApp`, `BootReceiver` | Restart after crashes, start on boot, HOME checks. |
 | `ReturnOverlay` | "Back to OpenFrame" button over Android's Wi-Fi screen. |
+| `MdnsName`, `ShortcutFile` | The frame's network name `openframe.local`; the Shortcut file and the address the Shortcut sends to. |
 | `ClockTrust`, `SystemInfo`, `Diagnostics` | Whether the clock can be trusted yet; Settings → System facts and set-up checks. |
 
 Web UI (`app/src/main/assets/web/`): `app.js` (layouts, quick menu, pages), `slideshow.js`, `photo-menu.js`,
@@ -164,6 +165,13 @@ Changes save instantly; another device's changes show up within 10 s.
 - **Uploads**: the upload page (`/upload`, behind the PIN) or the **iPhone Shortcut** (`docs/ios-shortcut.md`) with
   its own **upload key** that can only add photos and videos. The Shortcut sends the date taken and place; videos
   larger than 1080p or 10-bit are refused with a reason. Exact duplicates are skipped.
+- **The frame's name**: the frame answers to **`openframe.local`** (`openframe-2.local` and so on if the name is taken),
+  so the Shortcut keeps working when the router gives the frame a new IP. Android's own mDNS daemon (`mdnsd`) already
+  holds the mDNS port, so the app registers an A record with it through its local socket (`/dev/socket/mdnsd`, the
+  messages of `DNSServiceRegisterRecord`; no root), again when the IP changes or the daemon restarts, and holds a
+  Wi-Fi multicast lock so lookups still arrive while the screen is off. Settings → iPhone Shortcut shows the name and
+  the address the Shortcut really sends to (the `Host` of the last upload with the key); the set-up guide uses the
+  name, with the IP as a backup for networks that block names.
 - Every response carries `X-Frame-Options: SAMEORIGIN`, `frame-ancestors 'self'` and `nosniff`. Plain HTTP on the
   home network: never forward port 8080 on the router.
 
@@ -180,7 +188,8 @@ Changes save instantly; another device's changes show up within 10 s.
 
 ## 12. Warnings and Android screens
 
-- Problems (a calendar that keeps failing, a refused upload, photos that can't be shown, storage, sleep set-up,
+- Problems (a calendar that keeps failing, a refused upload, a Shortcut still sending to an IP the frame no longer
+  has, photos that can't be shown, storage, sleep set-up,
   repeated restarts) show a small icon; calendar and upload problems also pop up once. Popups close themselves after
   60 s. Offline shows only an offline icon.
 - Android's Wi-Fi screen opens with a **"Back to OpenFrame"** button over it (needs `SYSTEM_ALERT_WINDOW`), since the

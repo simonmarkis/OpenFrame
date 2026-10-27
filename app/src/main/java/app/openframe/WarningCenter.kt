@@ -26,10 +26,12 @@ class WarningCenter(private val app: OpenFrameApp) {
         val free = runCatching { StatFs(Environment.getExternalStorageDirectory().path).availableBytes }.getOrNull()
         val sleepOn = app.config.sleep.schedules.any { it.enabled && it.days.isNotEmpty() }
         val homeLost = HomeApp.aliasEnabled(app) && HomeApp.current(app) == "chooser"
+        val ip = SystemInfo.ipv4()
+        val moved = app.shortcutFile.movedFrom(ip)?.let { WarningRules.Moved(it, ip!!, app.mdnsName.name) }
         val list = WarningRules.evaluate(WarningRules.Input(app.calendarSync.online, System.currentTimeMillis(),
             feeds, weather, unshowable, free,
             sleepNeedsAdmin = sleepOn && !app.power.adminActive, homeLost = homeLost,
-            restartsToday = CrashGuard.count(app, null, 24 * 3600_000L), refusedUpload = app.uploadRefusals.current()))
+            restartsToday = CrashGuard.count(app, null, 24 * 3600_000L), refusedUpload = app.uploadRefusals.current(), shortcutMoved = moved))
         dismissals.prune(list)
         return list
     }

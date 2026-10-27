@@ -96,6 +96,8 @@ object SystemInfo {
     fun network(app: OpenFrameApp): JSONObject {
         val out = JSONObject().put("online", app.calendarSync.online)
         out.put("ip", ipv4() ?: JSONObject.NULL)
+        out.put("name", app.mdnsName.name ?: JSONObject.NULL)
+        out.put("nameProblem", app.mdnsName.problem ?: JSONObject.NULL)
         val wifi = app.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         val info = runCatching { wifi?.connectionInfo }.getOrNull()
         // Android may hide the network name ("<unknown ssid>"); show nothing rather than that.

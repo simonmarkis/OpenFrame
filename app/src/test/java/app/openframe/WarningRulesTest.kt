@@ -111,6 +111,18 @@ class WarningRulesTest {
         assertTrue(d.shouldPopup(first))
     }
 
+    @Test fun shortcutOnAnOldAddressIsAnUploadProblem() {
+        val w = WarningRules.evaluate(input().copy(shortcutMoved = WarningRules.Moved("192.168.1.20", "192.168.1.21", "openframe.local")))
+        assertEquals(listOf("shortcut-address"), w.map { it.id })
+        assertEquals("upload", w[0].kind) // the popup says "Upload problem"
+        assertTrue(w[0].canPopup)
+        assertTrue(w[0].detail.startsWith("The frame's address changed to 192.168.1.21. Your iPhone Shortcut still sends to 192.168.1.20: change it to openframe.local"))
+        // Another move is a new problem.
+        val again = WarningRules.evaluate(input().copy(shortcutMoved = WarningRules.Moved("192.168.1.20", "192.168.1.22", null)))[0]
+        assertTrue(again.signature != w[0].signature)
+        assertTrue(again.detail.contains("change it in the Shortcut's Get Contents of URL"))
+    }
+
     @Test fun refusedUploadWarnsWithPopupUntilCleared() {
         val r = WarningRules.Refused(now, "video", "HDR (10-bit) HEVC video; the frame plays standard 8-bit video.")
         val w = WarningRules.evaluate(input().copy(refusedUpload = r, zone = java.time.ZoneId.of("America/Los_Angeles")))

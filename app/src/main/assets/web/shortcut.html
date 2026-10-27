@@ -59,6 +59,8 @@
       <b>Photos</b> → Share → <b>Send to Frame</b>. Keep this page open next to Shortcuts; the two values you need have Copy buttons.</p>
     <div class="note" style="margin-bottom:14px"><b>Already have the Shortcut?</b> Add the actions of <b>step 6</b> you don't have yet just above your “Get Contents of URL”, and change its address as in <b>step 7</b>. Then videos keep their date and place (converting a video drops them), and captions show the place's name (new: <b>Name</b>, <b>URL Encode</b>, and <code>&amp;place=</code>). Afterwards export it again for the frame (Settings → Add from your phone → iPhone Shortcut).</div>
 
+    <div class="note" id="nameNote" hidden style="margin-bottom:14px"><b>Your Shortcut sends to numbers like 192.168.1.20?</b> The frame now has a name: in <b>Get Contents of URL</b>, replace just those numbers with <b id="nameInNote">openframe.local</b> (keep <code>:8080/api/upload?…</code> as it is). Then it keeps working when your router gives the frame a new address. Send one photo, then export the Shortcut again for the frame.</div>
+
     <!-- The user's own export, kept on the frame (Settings → Add from your phone → iPhone Shortcut); shown when there is one. -->
     <section class="step ready" id="ready" hidden>
       <h2>Ready-made Shortcut</h2>
@@ -132,6 +134,8 @@
       <p>Search <b>get contents</b> → tap <b>Get Contents of URL</b>. Place it <b>below the actions of step 6</b> but <b>above “End Repeat”</b>.</p>
       <p>Tap the blue <b>URL</b> field and paste this address (it ends with <b>taken=</b>):</p>
       <div class="value"><code id="url">…</code><button type="button" data-copy="url">Copy</button></div>
+      <div class="note" id="ipBackup" hidden><b>If the Shortcut can't reach the frame by its name</b> (some mesh Wi-Fi systems block names), use the frame's numbers instead, and reserve them for the frame in your router (look for “DHCP reservation” or “fixed IP”) so they don't change:
+        <div class="value"><code id="ipUrl">…</code><button type="button" data-copy="ipUrl">Copy</button></div></div>
       <p>Right after it, still in the URL field, add the date: tap <b>Repeat Item</b> in the bar above the keyboard (or <b>Select Variable</b>), tap the new blue <b>Repeat Item</b> → choose <b>Date Taken</b> → <b>Date Format</b> → <b>ISO 8601</b>.</p>
       <p>Then type <code>&amp;lat=</code> and add the <b>Latitude</b> variable, then type <code>&amp;lon=</code> and add <b>Longitude</b>, then type <code>&amp;place=</code> and add <b>URL Encoded Text</b>. The <b>=</b> goes <b>before</b> each variable (with the variable in front of it, the frame gets no place). The URL reads:</p>
       <div class="action indent"><span class="icon" style="background:var(--c-web)">⇅</span><span class="tok url" id="urlTok2">http://…/api/upload?taken=</span><wbr><span class="tok var">Date Taken</span><wbr><span class="tok">&amp;lat=</span><wbr><span class="tok var">Latitude</span><wbr><span class="tok">&amp;lon=</span><wbr><span class="tok var">Longitude</span><wbr><span class="tok">&amp;place=</span><wbr><span class="tok var">URL Encoded Text</span></div>
@@ -190,10 +194,19 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       };
-      const [sys, key] = await Promise.all([get('/api/system'), get('/api/upload/key')]);
-      const host = sys.network.ip || location.hostname;
+      const [sys, key, sc] = await Promise.all([get('/api/system'), get('/api/upload/key'), get('/api/shortcut').catch(() => null)]);
+      // The frame's name (V1.0.2) keeps working when the router hands the frame a new IP; the IP is the backup.
+      const net = sys.network;
+      const host = net.name || net.ip || location.hostname;
       const url = `http://${host}:8080/api/upload?taken=`;
       document.getElementById('url').textContent = url;
+      if (net.name && net.ip) {
+        document.getElementById('ipUrl').textContent = `http://${net.ip}:8080/api/upload?taken=`;
+        document.getElementById('ipBackup').hidden = false;
+        document.getElementById('nameInNote').textContent = net.name;
+        // Only for a Shortcut that still sends to an IP (or hasn't sent since the frame learned where it sends).
+        document.getElementById('nameNote').hidden = !!(sc && sc.sendsTo && sc.sendsTo.isName);
+      }
       document.getElementById('urlTok').textContent = `${url}…`;
       document.getElementById('urlTok2').textContent = url;
       document.getElementById('key').textContent = key.key;

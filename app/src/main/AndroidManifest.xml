@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Wi-Fi name and signal in Settings → System (read-only). -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- The frame's name, openframe.local (SPEC §17): keep receiving name lookups while the screen is off. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <!-- FrameMedia/, removable volumes (read-only), dev UI folder; granted at install with adb install -g. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

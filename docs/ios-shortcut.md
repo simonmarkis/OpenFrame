@@ -2,7 +2,7 @@
 
 Select photos or videos in the Photos app → **Share** → **Send to Frame**.
 
-**Easiest way to build it:** on the iPhone, open `http://<frame IP>:8080/shortcut` in Safari (enter the
+**Easiest way to build it:** on the iPhone, open `http://openframe.local:8080/shortcut` in Safari (enter the
 web access PIN). That page walks through the steps with pictures of each action and Copy buttons for
 the address and the upload key. This file is the same guide in text.
 
@@ -11,6 +11,13 @@ Sending several photos and videos at once works; videos arrive with their date a
 **Already have an older version?** Add the actions of step 6 you don't have yet (**Name**, **URL Encode**) just
 above your "Get Contents of URL", and change its address as in step 7 (`&place=`). Then export it again and
 upload it in Settings → Add from your phone → iPhone Shortcut.
+
+**The frame's name** (V1.0.2): the frame answers to **`openframe.local`** (`openframe-2.local` if another device
+has that name; Settings → iPhone Shortcut shows it), so the address keeps working when the router gives the frame a
+new IP. A Shortcut with the IP in its URL (`http://192.168.1.20:8080/…`): replace just the numbers with
+`openframe.local`, send one photo (Settings then says it sends to the name), export it again, and replace the file
+on the frame. If the IP changes while the Shortcut still uses it, the frame shows an "Upload problem" warning.
+Networks that block names (some mesh systems): use the IP and reserve it for the frame in the router.
 
 ## The Shortcut
 
@@ -33,7 +40,7 @@ upload it in Settings → Add from your phone → iPhone Shortcut.
    **Not inside "Otherwise"**: there the If Result for a video becomes the longitude,
    and the frame answers "The Shortcut sent text instead of the photo or video".
 7. Below those, still inside the repeat: **Get Contents of URL**
-   - URL `http://<frame IP>:8080/api/upload?taken=` + variable **Repeat Item** → **Date Taken**,
+   - URL `http://openframe.local:8080/api/upload?taken=` (or the frame's IP, see above) + variable **Repeat Item** → **Date Taken**,
      Date Format **ISO 8601** + `&lat=` + **Latitude** + `&lon=` + **Longitude** + `&place=` +
      **URL Encoded Text**. The `=` goes
      **before** each variable (`&lat`+Latitude+`=` sends no place at all).
@@ -74,7 +81,7 @@ step 7).
 
 ## Without the Shortcut
 
-Open `http://<frame IP>:8080/upload` in Safari, choose photos and videos, optionally add a comment,
+Open `http://openframe.local:8080/upload` in Safari, choose photos and videos, optionally add a comment,
 and tap Upload. Safari converts iPhone HEIC photos to JPEG when it hands them to the page. Videos larger
 than 1080p are refused by the page before sending, with a pointer to the Shortcut.
 
